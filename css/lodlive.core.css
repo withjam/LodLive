@@ -735,8 +735,8 @@ div#msg .separ.inverse {
 	background-color:#c7c7c7; 
 }
 
-/*.ellipsis_text {
- max-height: 42px;
+.ellipsis_text {
+ max-height: 3.65em;
  overflow: hidden;
  display: block;
- }*/
+ }

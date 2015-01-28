@@ -16,7 +16,9 @@
 
 (function($) {
 
-  /* Want to eliminate the jquery jsonp dependency, or include it in our utils at least 
+  var jwin = $(window), jbody = $(document.body);
+
+  /* Want to eliminate the jquery jsonp dependency, or include it in our utils at least */
 	$.jsonp.setup({
 		cache : true,
 		callbackParameter : 'callback',
@@ -24,9 +26,9 @@
 		pageCache : true,
 		timeout : 30000
 	});
-  */
   // simple MD5 implementation to eliminate dependencies, can still pass in MD5 (or some other algorithm) as options.hashFunc if desired
   function hashFunc(str) {
+    if (!str) { return str; }
     for(var r=0, i=0; i<str.length; i++) {
       r = (r<<5) - r+str.charCodeAt(i);
       r &= r;
@@ -34,9 +36,18 @@
     return r;
   }
 
-  var DEFAULT_BOX_TEMPLATE = '<div class="defaultBoxTemplate"></div>';
+  var DEFAULT_BOX_TEMPLATE = '<div class="boxWrapper defaultBoxTemplate" id="first"><div class="box sprite"></div></div>';
 
-  /** LodLive constructor takes an instance of LodLiveProfile which should have endpoints defined **/
+  /** LodLiveProfile constructor - Not sure this is even necessary, a basic object should suffice - I don't think it adds any features or logic
+    * @Class LodLiveProfile
+    */
+  function LodLiveProfile() {
+
+  }
+
+  /** LodLive constructor takes an instance of LodLiveProfile which should have endpoints defined
+    * There is a bit of overlap with the options passed to init.  Perhaps we combine them and possibly skip the init step?
+    */
   function LodLive(profile) {
     this.profile = profile;
   }
@@ -57,7 +68,8 @@
     * @param {object=} options optional hash of options
     */
   LodLive.prototype.init = function(context,options) {
-    var instance = this, firstUri, jwin = $(window), jbody = $(document.body);
+    var instance = this, firstUri;
+    console.log('initializing LodLive', context, options);
     if (typeof options === 'string') {
       firstUri = options;
       options = {};
@@ -89,8 +101,10 @@
     this.imagesMap = {};
     this.mapsMap = {};
     this.infoPanelMap = {};
-    inst.connection = {};
-    this.hasFunc = options.hashFunc || hashFunc;
+    this.connection = {};
+    this.hashFunc = options.hashFunc || hashFunc;
+    this.innerPageMap = {};
+    this.storeIds = {};
     this.boxTemplate = options.boxTemplate || DEFAULT_BOX_TEMPLATE;
 
     // context.append('<div id="lodlogo" class="sprite"></div>');
@@ -105,10 +119,10 @@
     context.append(firstBox);
 
     // inizializzo la mappa delle classi
-    context.set('classMap', {
+    this.classMap = {
       // randomize first color
       counter : Math.floor(Math.random() * 13) + 1
-    });
+    };
 
     // attivo le funzioni per il drag
     this.renewDrag(context.children('.boxWrapper'));
@@ -120,18 +134,18 @@
     this.msg('', 'init');
 
     jwin.bind('scroll', function() {
-      inst.docInfo(null, 'move');
-      inst.controlPanel('move');
+      instance.docInfo(null, 'move');
+      instance.controlPanel('move');
     });
     jwin.bind('resize', function() {
-      inst.docInfo('', 'close');
-      inst.controlPanelDiv.remove();
-      inst.controlPanel('init');
+      instance.docInfo('', 'close');
+      instance.controlPanelDiv.remove();
+      instance.controlPanel('init');
     });
   };
 
   LodLive.prototype.controlPanel = function(action) {
-    var panel = this.controlPanelDiv, inst = this;
+    var inst = this, panel = inst.controlPanelDiv;
     if (this.debugOn) {
       start = new Date().getTime();
     }
@@ -139,7 +153,8 @@
     
     if (action == 'init') {
 
-      this.controlPanelDiv = panel = $('<div class="lodLiveControlPanel"></div>');
+      panel = $('<div class="lodLiveControlPanel"></div>');
+      inst.controlPanelDiv = panel;
       //FIXME: remove inline css where possible
       panel.css({
         left : 0,
@@ -204,16 +219,16 @@
 
           var anUl = $('<ul class="lodlive-panel-options-list"></ul>');
           panelContent.append('<div></div>');
-          panelContent.children('div').append('<h2>' + lang('options') + '</h2>').append(anUl);
-          anUl.append('<li ' + ( inst.doInverse ? 'class="checked"' : 'class="check"') + ' data-value="inverse" ><span class="spriteLegenda"></span>' + lang('generateInverse') + '</li>');
-          anUl.append('<li ' + ( inst.doAutoExpand ? 'class="checked"' : 'class="check"') + ' data-value="autoExpand" ><span class="spriteLegenda"></span>' + lang('autoExpand') + '</li>');
-          anUl.append('<li ' + ( inst.doAutoSameas ? 'class="checked"' : 'class="check"') + ' data-value="autoSameas"><span class="spriteLegenda"></span>' + lang('autoSameAs') + '</li>');
+          panelContent.children('div').append('<h2>' + LodLiveUtils.lang('options') + '</h2>').append(anUl);
+          anUl.append('<li ' + ( inst.doInverse ? 'class="checked"' : 'class="check"') + ' data-value="inverse" ><span class="spriteLegenda"></span>' + LodLiveUtils.lang('generateInverse') + '</li>');
+          anUl.append('<li ' + ( inst.doAutoExpand ? 'class="checked"' : 'class="check"') + ' data-value="autoExpand" ><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoExpand') + '</li>');
+          anUl.append('<li ' + ( inst.doAutoSameas ? 'class="checked"' : 'class="check"') + ' data-value="autoSameas"><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoSameAs') + '</li>');
 
-          anUl.append('<li ' + ( inst.doCollectImages ? 'class="checked"' : 'class="check"') + ' data-value="autoCollectImages"><span class="spriteLegenda"></span>' + lang('autoCollectImages') + '</li>');
-          anUl.append('<li ' + ( inst.doDrawMap ? 'class="checked"' : 'class="check"') + ' data-value="autoDrawMap"><span class="spriteLegenda"></span>' + lang('autoDrawMap') + '</li>');
+          anUl.append('<li ' + ( inst.doCollectImages ? 'class="checked"' : 'class="check"') + ' data-value="autoCollectImages"><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoCollectImages') + '</li>');
+          anUl.append('<li ' + ( inst.doDrawMap ? 'class="checked"' : 'class="check"') + ' data-value="autoDrawMap"><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoDrawMap') + '</li>');
 
           anUl.append('<li>&#160;</li>');
-          anUl.append('<li class="reload"><span  class="spriteLegenda"></span>' + lang('restart') + '</li>');
+          anUl.append('<li class="reload"><span  class="spriteLegenda"></span>' + LodLiveUtils.lang('restart') + '</li>');
           anUl.children('.reload').click(function() {
             context.lodlive('close');
           });
@@ -426,13 +441,13 @@
     * @returns {string} the url
     */
   LodLive.prototype.composeQuery = function(resource, module, testURI) {
-    var  url, res, endpoint, inst = this, profile = inst.profile;
+    var  url, res, endpoint, inst = this, lodLiveProfile = inst.profile;
 
     if (inst.debugOn) {
       start = new Date().getTime();
     }
 
-    jQuery.each( profile.connection, function(key, value) {
+    jQuery.each( lodLiveProfile.connection, function(key, value) {
 
       var keySplit = key.split(',');
 
@@ -528,7 +543,7 @@
   LodLive.prototype.msg = function(msg, action, type, endpoint, inverse) {
     // area dei messaggi
     var inst = this, msgPanel = inst.context.find('.lodlive-message-container'), msgs;
-
+    if (!msg) msg = '';
     switch(action) {
 
       case 'init': 
@@ -678,7 +693,7 @@
             //FIXME: use regex to support http and https
             if (aEndpoint.indexOf('http:') === 0) {
 
-              var aLink = $('<span class="linkArea sprite" title="' + lang('executeThisQuery') + '"></span>');
+              var aLink = $('<span class="linkArea sprite" title="' + LodLiveUtils.lang('executeThisQuery') + '"></span>');
 
               aLink.click(function() {
                 window.open(aEndpoint + '?query=' + encodeURIComponent(toLog.text));
@@ -707,7 +722,7 @@
 
           if (toLog.error) {
 
-            panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + lang('enpointNotAvailable') + '</strong>');
+            panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + LodLiveUtils.lang('enpointNotAvailable') + '</strong>');
 
           }
 
@@ -716,11 +731,11 @@
 
             if (!toLog.founded) {
 
-              panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + lang('propsNotFound') + '</strong>');
+              panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + LodLiveUtils.lang('propsNotFound') + '</strong>');
 
             } else {
 
-              panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + toLog.founded + ' ' + lang('propsFound') + ' </strong>');
+              panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + toLog.founded + ' ' + LodLiveUtils.lang('propsFound') + ' </strong>');
 
             }
 
@@ -882,7 +897,7 @@
                         marginLeft : -((imgW * 113 / imgH - 113) / 2)
                       });
                     }
-                    var controls = $('<span class="lodlive-image-controls"><span class="imgControlCenter" title="' + lang('showResource') + '"></span><span class="imgControlZoom" title="' + lang('zoomIn') + '"></span><span class="imgTitle">' + titolo + '</span></span>');
+                    var controls = $('<span class="lodlive-image-controls"><span class="imgControlCenter" title="' + LodLiveUtils.lang('showResource') + '"></span><span class="imgControlZoom" title="' + LodLiveUtils.lang('zoomIn') + '"></span><span class="imgTitle">' + titolo + '</span></span>');
                     img.append(controls);
                     //FIXME: this totally needs to be in CSS - fthis
                     img.hover(function() {
@@ -941,7 +956,7 @@
           panelContent.width(148);
 
           if (!imagePanel.children('.amsg').length) {
-            imagePanel.append('<span class="amsg">' + lang('imagesNotFound') + '</span>');
+            imagePanel.append('<span class="amsg">' + LodLiveUtils.lang('imagesNotFound') + '</span>');
           }
         }
 
@@ -979,7 +994,7 @@
   };
 
   LodLive.prototype.renewDrag = function(aDivList) {
-    var inst = this;
+    var inst = this, generated;
     if (inst.debugOn) {
       start = new Date().getTime();
     }
@@ -1024,9 +1039,9 @@
   };
 
   LodLive.prototype.centerBox = function(aBox) {
-    var inst = this, ch = inst.context.height(), cw = inst.context.width, bw = aBox.width() || 65, bh = aBox.height() || 65;
+    var inst = this, ch = inst.context.height(), cw = inst.context.width(), bw = aBox.width() || 65, bh = aBox.height() || 65, start;
     if (inst.debugOn) {
-      var start = new Date().getTime();
+      start = new Date().getTime();
     }
 
     var top = (ch - bh) / 2 + (inst.context.scrollTop() || 0);
@@ -1037,9 +1052,11 @@
       top : top
     };
 
+    //console.log('centering top: %s, left: %s', top, left);
+
     //FIXME: we don't want to assume we scroll the entire window here, since we could be just a portion of the screen or have multiples
-    window.scrollBy(-cw, -ch);
-    window.scrollBy(cw / 2 - jwin.width() / 2 + 25, ch / 2 - jwin.height() / 2 + 65);
+    //window.scrollBy(-cw, -ch);
+    //window.scrollBy(cw / 2 - jwin.width() / 2 + 25, ch / 2 - jwin.height() / 2 + 65);
 
     try {
       aBox.animate(props, 1000);
@@ -1112,17 +1129,18 @@
     var newObj = inst.context.find('#' + aId);
     var isInverse = ele.is('.inverse');
     var exist = true;
+    ele = $(ele);
 
     // verifico se esistono box rappresentativi dello stesso documento
     // nella pagina
     if (!newObj.length) {
 
-      newObj = inst.boxTemplate;
+      newObj = $(inst.boxTemplate);
       exist = false;
 
     }
 
-    var circleId = ele.data('circleId');
+    var circleId = ele.data('circleid');
     var originalCircus = $('#' + circleId);
 
     if (inst.debugOn) {
@@ -1170,7 +1188,7 @@
     var propertyName = ele.data('property');
     var rel = ele.attr('rel');
     newObj.attr('id', aId);
-    newObj.attr('rel', ele.attr('rel'));
+    newObj.attr('rel', rel);
 
     var fromInverse = isInverse ? 'div[data-property="' + propertyName + '"][rel="' + rel + '"]' : null;
     if (inst.debugOn) {
@@ -1185,7 +1203,7 @@
       var pos = parseInt(ele.attr('data-circlePos'), 10);
       var parts = parseInt(ele.attr('data-circleParts'), 10);
       var chordsListExpand = inst.circleChords(parts > 10 ? (pos % 2 > 0 ? originalCircus.width() * 3 : originalCircus.width() * 2) : originalCircus.width() * 5 / 2, parts, originalCircus.position().left + obj.width() / 2, originalCircus.position().top + originalCircus.height() / 2, null, pos);
-      context.append(newObj);
+      inst.context.append(newObj);
       //FIXME: eliminate inline CSS where possible
       newObj.css({
         left : (chordsListExpand[0][0] - newObj.height() / 2),
@@ -1194,7 +1212,7 @@
         zIndex : 99
       });
 
-      inst.renewDrag(context.children('.boxWrapper'));
+      inst.renewDrag(inst.context.children('.boxWrapper'));
       if (inst.debugOn) {
         console.debug((new Date().getTime() - start) + '  addNewDoc 07 ');
       }
@@ -1437,8 +1455,8 @@
 
         var pos = obj.position();
         //TODO: convert to single quotes, but not critical enough to bother first pass
-        var tools = $("<div class=\"lodlive-toolbox sprite\" style=\"display:none\" ><div class=\"innerActionBox infoQ\" rel=\"infoQ\" title=\"" + lang('moreInfoOnThis') + "\" >&#160;</div><div class=\"innerActionBox center\" rel=\"center\" title=\"" + lang('centerClose') + "\" >&#160;</div><div class=\"innerActionBox newpage\" rel=\"newpage\" title=\"" + lang('openOnline') + "\" >&#160;</div><div class=\"innerActionBox expand\" rel=\"expand\" title=\"" + lang('openRelated') + "\" >&#160;</div><div class=\"innerActionBox remove\" rel=\"remove\" title=\"" + lang('removeResource') + "\" >&#160;</div></div>");
-        context.append(tools);
+        var tools = $("<div class=\"lodlive-toolbox sprite\" style=\"display:none\" ><div class=\"innerActionBox infoQ\" rel=\"infoQ\" title=\"" + LodLiveUtils.lang('moreInfoOnThis') + "\" >&#160;</div><div class=\"innerActionBox center\" rel=\"center\" title=\"" + LodLiveUtils.lang('centerClose') + "\" >&#160;</div><div class=\"innerActionBox newpage\" rel=\"newpage\" title=\"" + LodLiveUtils.lang('openOnline') + "\" >&#160;</div><div class=\"innerActionBox expand\" rel=\"expand\" title=\"" + LodLiveUtils.lang('openRelated') + "\" >&#160;</div><div class=\"innerActionBox remove\" rel=\"remove\" title=\"" + LodLiveUtils.lang('removeResource') + "\" >&#160;</div></div>");
+        inst.context.append(tools);
         //FIXME: eliminate inline CSS when possible
         tools.css({
           top : pos.top - 23,
@@ -1592,7 +1610,7 @@
 
       if (inst.showInfoConsole) {
         inst.queryConsole('log', {
-          title : lang('endpointNotConfiguredSoInternal'),
+          title : LodLiveUtils.lang('endpointNotConfiguredSoInternal'),
           text : res,
           uriId : URI
         });
@@ -1737,54 +1755,53 @@
   };
 
   LodLive.prototype.processDraw = function(x1, y1, x2, y2, canvas, toId) {
-    var inst = this;
-    try {
+    var inst = this, start, lodLiveProfile = inst.profile;
 
-      if (inst.debugOn) {
-        start = new Date().getTime();
-      }
-      // recupero il nome della proprieta'
-      var label = '';
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+    // recupero il nome della proprieta'
+    var label = '';
 
-      var lineStyle = 'standardLine';
-      //FIXME:  don't use IDs
-      if (inst.context.find("#" + toId).length > 0) {
+    var lineStyle = 'standardLine';
+    //FIXME:  don't use IDs
+    if (inst.context.find("#" + toId).length > 0) {
 
-        label = canvas.attr("data-propertyName-" + toId);
+      label = canvas.attr("data-propertyName-" + toId);
 
-        var labeArray = label.split("\|");
+      var labeArray = label.split("\|");
 
-        label = "\n";
+      label = "\n";
 
-        for (var o = 0; o < labeArray.length; o++) {
+      for (var o = 0; o < labeArray.length; o++) {
 
-          if (lodLiveProfile.arrows[$.trim(labeArray[o])]) {
-            lineStyle = inst.profile.arrows[$.trim(labeArray[o])] + "Line";
-          }
+        if (lodLiveProfile.arrows[$.trim(labeArray[o])]) {
+          lineStyle = inst.profile.arrows[$.trim(labeArray[o])] + "Line";
+        }
 
-          var shortKey = LodLive.shortenKey(labeArray[o]);
-          var lastHash = shortKey.lastIndexOf('#');
-          var lastSlash = shortKey.lastIndexOf('/');
+        var shortKey = LodLive.shortenKey(labeArray[o]);
+        var lastHash = shortKey.lastIndexOf('#');
+        var lastSlash = shortKey.lastIndexOf('/');
 
-          if (label.indexOf("\n" + shortKey + "\n") == -1) {
-            label += shortKey + "\n";
-          }
+        if (label.indexOf("\n" + shortKey + "\n") == -1) {
+          label += shortKey + "\n";
         }
       }
-      if (lineStyle === 'standardLine') {
-
-        inst.standardLine(label, x1, y1, x2, y2, canvas, toId);
-
-      } else {
-        //TODO: doesn't make sense to have these live in different files.  Should make line drawers an extensible interface
-        LodLiveUtils.customLines(context, lineStyle, label, x1, y1, x2, y2, canvas, toId);
-      }
-
-      if (inst.debugOn) {
-        console.debug((new Date().getTime() - start) + '  processDraw ');
-      }
-    } catch (e) { //what are we catching?
     }
+    //if (lineStyle === 'standardLine') { it appears they all end up back here anyway
+    if (lineStyle !== 'isSameAsLine') {
+
+      inst.standardLine(label, x1, y1, x2, y2, canvas, toId);
+
+    } else {
+      //TODO: doesn't make sense to have these live in different files.  Should make line drawers an extensible interface
+      LodLiveUtils.customLines(inst.context, lineStyle, label, x1, y1, x2, y2, canvas, toId);
+    }
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  processDraw ');
+    }
+    
   };
 
   LodLive.prototype.drawAllLines = function(obj) {
@@ -1818,8 +1835,8 @@
   };
 
   LodLive.prototype.drawaLine = function(from, to, propertyName) {
-    var inst = this;
-    if (debugOn) {
+    var inst = this, start;
+    if (inst.debugOn) {
       start = new Date().getTime();
     }
 
@@ -1835,8 +1852,8 @@
       }
       inst.processDraw(pos1.left + from.width() / 2, pos1.top + from.height() / 2, pos2.left + to.width() / 2, pos2.top + to.height() / 2, aCanvas, to.attr("id"));
     } else {
-      aCanvas = $("<canvas data-propertyName-" + to.attr("id") + "=\"" + propertyName + "\" height=\"" + context.height() + "\" width=\"" + context.width() + "\" id=\"line-" + from.attr("id") + "\"></canvas>");
-      context.append(aCanvas);
+      aCanvas = $("<canvas data-propertyName-" + to.attr("id") + "=\"" + propertyName + "\" height=\"" + inst.context.height() + "\" width=\"" + inst.context.width() + "\" id=\"line-" + from.attr("id") + "\"></canvas>");
+      inst.context.append(aCanvas);
       aCanvas.css({
         'position' : 'absolute',
         'zIndex' : '0',
@@ -1846,7 +1863,7 @@
       inst.processDraw(pos1.left + from.width() / 2, pos1.top + from.height() / 2, pos2.left + to.width() / 2, pos2.top + to.height() / 2, aCanvas, to.attr("id"));
     }
 
-    if (debugOn) {
+    if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  drawaLine ');
     }
   };
@@ -2107,7 +2124,7 @@
     }
 
     if (contents.length == 0 && bnodes.length == 0) {
-      var jSection = $("<div class=\"section\"><label data-title=\"" + lang('resourceMissingDoc') + "\"></label><div>" + lang('resourceMissingDoc') + "</div></div><div class=\"separ sprite\"></div>");
+      var jSection = $("<div class=\"section\"><label data-title=\"" + LodLiveUtils.lang('resourceMissingDoc') + "\"></label><div>" + LodLiveUtils.lang('resourceMissingDoc') + "</div></div><div class=\"separ sprite\"></div>");
       jSection.find('label').each(function() {
         $(this).hover(function() {
           inst.msg($(this).attr('data-title'), 'show');
@@ -2147,7 +2164,7 @@
           }
         });
         $(this).error(function() {
-          $(this).attr("title", lang('noImage') + " \n" + $(this).attr("src"));
+          $(this).attr("title", LodLiveUtils.lang('noImage') + " \n" + $(this).attr("src"));
           $(this).attr("src", "img/immagine-vuota-" + $.jStorage.get('selectedLanguage') + ".png");
         });
       });
@@ -2163,7 +2180,7 @@
     } else {
       destBox.append("<div class=\"separLast\"></div>");
     }
-    if (debugOn) {
+    if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  formatDoc ');
     }
   };
@@ -2261,7 +2278,7 @@
 
   LodLive.prototype.getJsonValue = function(map, key, defaultValue) {
     var inst = this;
-    if (debugOn) {
+    if (inst.debugOn) {
       start = new Date().getTime();
     }
     var returnVal = [];
@@ -2275,7 +2292,7 @@
     if (returnVal == []) {
       returnVal = [defaultValue];
     }
-    if (debugOn) {
+    if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  getJsonValue');
     }
     return returnVal;
@@ -2342,13 +2359,13 @@
 
 
 	LodLive.prototype.format = function(destBox, values, uris, inverses) {
-    var inst = this, classMap = inst.classMap;
+    var inst = this, classMap = inst.classMap, lodLiveProfile = inst.profile;
 
 		if (inst.debugOn) {
 			start = new Date().getTime();
 		}
 		var containerBox = destBox.parent('div');
-		var thisUri = containerBox.attr('rel');
+		var thisUri = containerBox.attr('rel') || '';
 
 		// recupero il doctype per caricare le configurazioni specifiche
 		var docType = inst.getJsonValue(uris, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'default');
@@ -2434,12 +2451,13 @@
 			}
 
 		}
-		if ((values.length == 0 && uris.length == 0) || containerBox.attr("data-endpoint").indexOf("http://system/dummy") == 0) {
+    var dataEndpoint = containerBox.attr("data-endpoint") || '';
+		if ((values.length == 0 && uris.length == 0) || dataEndpoint.indexOf("http://system/dummy") == 0) {
 			if (containerBox.attr("data-endpoint").indexOf("http://system/dummy") != -1) {
-				containerBox.attr("data-endpoint", lang('endpointNotConfigured'));
+				containerBox.attr("data-endpoint", LodLiveUtils.lang('endpointNotConfigured'));
 			}
 			if (uris.length == 0 && values.length == 0) {
-				result = "<div class=\"boxTitle\" threedots=\"" + lang('resourceMissing') + "\"><a target=\"_blank\" href=\"" + thisUri + "\"><span class=\"spriteLegenda\"></span>" + thisUri + "</a>";
+				result = "<div class=\"boxTitle\" data-tooltip=\"" + LodLiveUtils.lang('resourceMissing') + "\"><a target=\"_blank\" href=\"" + thisUri + "\"><span class=\"spriteLegenda\"></span>" + thisUri + "</a>";
 			}
 		}
 		result += "</span></div>";
@@ -2447,20 +2465,11 @@
 		if (jResult.text() == '' && docType == 'bnode') {
 			jResult.text('[blank node]');
 		} else if (jResult.text() == '') {
-			jResult.text(lang('noName'));
+			jResult.text(LodLiveUtils.lang('noName'));
 		}
 		destBox.append(jResult);
-		if (!jResult.children().html() || jResult.children().html().indexOf(">") == -1) {
-			jResult.ThreeDots({
-				max_rows : 3
-			});
-		}
-		var el = jResult.find('.threedots_ellipsis');
-		if (el.length > 0) {
-			el.detach();
-			jResult.children('span').append(el);
-		}
 		var resourceTitle = jResult.text();
+    jResult.data('tooltip', resourceTitle);
 		// posiziono il titolo al centro del box
 		jResult.css({
 			'marginTop' : jResult.height() == 13 ? 58 : jResult.height() == 26 ? 51 : 45,
@@ -2468,7 +2477,9 @@
 		});
 
 		destBox.hover(function() {
-			inst.msg(jResult.attr("threedots") == '' ? jResult.text() : jResult.attr("threedots") + " \n " + thisUri, 'show', 'fullInfo', containerBox.attr("data-endpoint"));
+        var msgTitle = jResult.text();
+        console.log('destbox hover title', msgTitle);
+			inst.msg(msgTitle, 'show', 'fullInfo', containerBox.attr("data-endpoint"));
 		}, function() {
 			inst.msg(null, 'hide');
 		});
@@ -2677,7 +2688,7 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						var objBox = $("<div class=\"groupedRelatedBox sprite\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + lang('connectedResources') + "\" ></div>");
+						var objBox = $("<div class=\"groupedRelatedBox sprite\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
@@ -2707,7 +2718,7 @@
 						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 						obj.attr("data-circlePos", innerCounter);
 						obj.attr("data-circleParts", 36);
-						obj.attr("data-circleId", containerBox.attr('id'));
+						obj.attr("data-circleid", containerBox.attr('id'));
 					}
 					/*
 					 * } else if (alredyInserted ==
@@ -2726,7 +2737,7 @@
 					counter++;
 				}
 				if (obj) {
-					obj.attr("data-circleId", containerBox.attr('id'));
+					obj.attr("data-circleid", containerBox.attr('id'));
 					obj.attr("data-property", akey);
 					// se si tratta di un  Bnode applico una classe diversa
 					var akeyArray = akey.split(" ");
@@ -2768,7 +2779,7 @@
 						// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
 						// akey + "\" >" + (propertyGroup[akey].length) +
 						// "</div>");
-						var objBox = $("<div class=\"groupedRelatedBox sprite inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + lang('connectedResources') + "\" ></div>");
+						var objBox = $("<div class=\"groupedRelatedBox sprite inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
@@ -2905,6 +2916,10 @@
   LodLive.prototype.openDoc = function(anUri, destBox, fromInverse) {
     var inst = this;
 
+    if (!anUri) { 
+      $.error('LodLive: no uri for openDoc');
+    }
+
 		if (inst.debugOn) {
 			start = new Date().getTime();
 		}
@@ -2921,8 +2936,9 @@
 			});
 		}
 
+    if (inst.debugOn) console.log('composing query with anUri', anUri);
     //TODO: composeQuery looks like a static function, look into it
-		SPARQLquery = inst.composeQuery(anUri, 'documentUri');
+		var SPARQLquery = inst.composeQuery(anUri, 'documentUri');
 
 		if (inst.doStats) {
 			methods.doStats(anUri);
@@ -3104,9 +3120,9 @@
       // attivo lo sparql interno basato su sesame
       var res = LodLiveUtils.getSparqlConf('documentUri', lodLiveProfile['default'], lodLiveProfile).replace(/\{URI\}/ig, resource);
       var url = lodLiveProfile['default'].endpoint + "?uri=" + encodeURIComponent(resource) + "&query=" + encodeURIComponent(res);
-      if ($.jStorage.get('showInfoConsole')) {
-        methods.queryConsole('log', {
-          title : lang('endpointNotConfiguredSoInternal'),
+      if (inst.showInfoConsole) {
+        inst.queryConsole('log', {
+          title : LodLiveUtils.lang('endpointNotConfiguredSoInternal'),
           text : res,
           uriId : resource
         });
@@ -3205,7 +3221,7 @@
 
     destBox.children('.box').addClass("errorBox");
     destBox.children('.box').html('');
-    var jResult = $("<div class=\"boxTitle\"><span>" + lang('enpointNotAvailable') + "</span></div>");
+    var jResult = $("<div class=\"boxTitle\"><span>" + LodLiveUtils.lang('enpointNotAvailable') + "</span></div>");
     destBox.children('.box').append(jResult);
     jResult.css({
       'marginTop' : jResult.height() == 13 ? 58 : jResult.height() == 26 ? 51 : 45
@@ -3216,7 +3232,7 @@
     });
     destBox.append(obj);
     destBox.children('.box').hover(function() {
-      inst.msg(lang('enpointNotAvailableOrSLow'), 'show', 'fullInfo', destBox.attr("data-endpoint"));
+      inst.msg(LodLiveUtils.lang('enpointNotAvailableOrSLow'), 'show', 'fullInfo', destBox.attr("data-endpoint"));
     }, function() {
       inst.msg(null, 'hide');
     });
@@ -3239,7 +3255,7 @@
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },
       success : function(json) {
-        destBox.html(lang('choose'));
+        destBox.html(LodLiveUtils.lang('choose'));
         json = json.results && json.results.bindings;
         $.each(json, function(key, value) {
           var aclass = json[key].object.value;
@@ -3523,12 +3539,13 @@
       options = { method: options };
     }
     // we support multiple instances of LodLive on a page, so initialize (or apply) for each matched element
-    return this.each(function(ele) {
-      var ll = ele.data('lodlive-instance');
+    return this.each(function() {
+      var ele = $(this), ll = ele.data('lodlive-instance');
       // no method defaults to init
       if (!options.method || options.method.toLowerCase() === 'init') {
 
-        ll = ele.data('lodlive-instance') = new LodLive(options.profile);
+        ll = new LodLive(options.profile);
+        ele.data('lodlive-instance', ll);
         ll.init(ele, options); // pass in this element and the complete options
 
       } else if (LodLive.prototype.hasOwnProperty(method) && ele.data('lodlive-instance')) {

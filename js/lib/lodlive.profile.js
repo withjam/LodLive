@@ -1,4 +1,6 @@
-$.jStorage.set('profile', {
+'use strict';
+
+var myProfile = {
 	// parametri di connessione agli endpoint
 	'connection' : {
 		// base degli about dei documenti non dell'ontologia
@@ -649,23 +651,13 @@ $.jStorage.set('profile', {
 		}
 	}
 
-});
-if (!document.lodliveVars) {
-	document.lodliveVars = {};
-}
+};
 
-$.jStorage.set('boxTemplate', '<div class="boxWrapper" id="first"><div class="box sprite"></div></div>');
-$.jStorage.set('relationsLimit', 25);
-$.jStorage.set('doStats', $.jStorage.get('doStats', true));
-$.jStorage.set('doInverse', $.jStorage.get('doInverse', true));
-$.jStorage.set('doAutoExpand', $.jStorage.get('doAutoExpand', true));
-$.jStorage.set('doAutoSameas', $.jStorage.get('doAutoSameas', true));
-$.jStorage.set('doCollectImages', $.jStorage.get('doCollectImages', true));
-$.jStorage.set('doDrawMap', $.jStorage.get('doDrawMap', true));
-$.jStorage.set('showInfoConsole', $.jStorage.get('showInfoConsole', true));
+myProfile.boxTemplate = '<div class="boxWrapper" id="first"><div class="box sprite"></div></div>';
+myProfile.relationsLimit = 25;
 
-$.jStorage.set('endpoints', {
+myProfile.endpoints = {
 	all : 'output=json&format=application/json&timeout=0',
 	arcSparql : 'output=json&jsonp=lodlive',
 	sesame : 'Accept=application/sparql-results%2Bjson'
-});
+};

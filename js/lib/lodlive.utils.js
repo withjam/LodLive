@@ -1,3 +1,116 @@
+'use strict';
+
+(function () {
+    
+  var LodLiveUtils = {};
+
+  var _translations = {};
+
+  LodLiveUtils.getSparqlConf = function(what, where, lodLiveProfile) {
+    return where.sparql && where.sparql[what] ? where.sparql[what] : lodLiveProfile['default'].sparql[what];
+  };
+
+  /**
+    * Register a set of translations, for example ('en-us', { greeting: 'Hello' })
+  **/
+  LodLiveUtils.registerTranslation = function(langKey, data) {
+    _translations[langKey] = data;
+  };
+
+  LodLiveUtils.setDefaultTranslation = function(langKey) {
+    _translations['default'] = _translations[langKey] || _translations['default'];
+  };
+
+  LodLiveUtils.lang = function(obj, langKey) {
+    var lang = langKey ? _translations[langKey] || _translations['default'] : _translations['default'];
+    return (lang && lang[obj]) || obj;
+  };
+
+  LodLiveUtils.isSameAsLine = function(label, x1, y1, x2, y2, canvas, toId) {
+
+    // eseguo i calcoli e scrivo la riga di connessione tra i cerchi
+    var lineangle = (Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI) + 180;
+    var x2bis = x1 - Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) + 60;
+    //canvas.detectPixelRatio();
+    canvas.rotateCanvas({
+      rotate : lineangle,
+      x : x1,
+      y : y1
+    }).drawLine({
+      strokeStyle : "#000",
+      strokeWidth : 1,
+      strokeCap : 'bevel',
+      x1 : x1 - 60,
+      y1 : y1,
+      x2 : x2bis,
+      y2 : y1
+    });
+
+    if (lineangle > 90 && lineangle < 270) {
+      canvas.rotateCanvas({
+        rotate : 180,
+        x : (x2bis + x1) / 2,
+        y : (y1 + y1) / 2
+      });
+    }
+    label = $.trim(label).replace(/\n/g, ', ');
+    canvas.drawText({// inserisco l'etichetta
+      fillStyle : "#000",
+      strokeStyle : "#000",
+      x : (x2bis + x1 + ((x1 + 60) > x2 ? -60 : +60)) / 2,
+      y : (y1 + y1 - ((x1 + 60) > x2 ? 18 : -18)) / 2,
+      text : ((x1 + 60) > x2 ? " « " : "") + label + ((x1 + 60) > x2 ? "" : " » "),
+      align : "center",
+      strokeWidth : 0.01,
+      fontSize : 11,
+      fontFamily : "'Open Sans',Verdana"
+    }).restoreCanvas().restoreCanvas();
+
+    // ed inserisco la freccia per determinarne il verso della
+    // relazione
+    lineangle = Math.atan2(y2 - y1, x2 - x1);
+    var angle = 0.79;
+    var h = Math.abs(8 / Math.cos(angle));
+    var fromx = x2 - 60 * Math.cos(lineangle);
+    var fromy = y2 - 60 * Math.sin(lineangle);
+    var angle1 = lineangle + Math.PI + angle;
+    var topx = (x2 + Math.cos(angle1) * h) - 60 * Math.cos(lineangle);
+    var topy = (y2 + Math.sin(angle1) * h) - 60 * Math.sin(lineangle);
+    var angle2 = lineangle + Math.PI - angle;
+    var botx = (x2 + Math.cos(angle2) * h) - 60 * Math.cos(lineangle);
+    var boty = (y2 + Math.sin(angle2) * h) - 60 * Math.sin(lineangle);
+
+    canvas.drawLine({
+      strokeStyle : "#000",
+      strokeWidth : 1,
+      x1 : fromx,
+      y1 : fromy,
+      x2 : botx,
+      y2 : boty
+    });
+    canvas.drawLine({
+      strokeStyle : "#000",
+      strokeWidth : 1,
+      x1 : fromx,
+      y1 : fromy,
+      x2 : topx,
+      y2 : topy
+    });
+  };
+
+  LodLiveUtils.customLines = function(context, method) {
+    console.log('customLines', method);
+    if (LodLiveUtils[method]) {
+      return LodLiveUtils[method].apply(this, Array.prototype.slice.call(arguments, 2));
+    }
+  };
+
+  if (!window.LodLiveUtils) {
+    window.LodLiveUtils = LodLiveUtils;
+  }
+
+})();
+
 // a causa di un baco di opera e firefox implmento una funzione apposita per
 // settare la posizione dei background
 $.fn.setBackgroundPosition = function(pos) {
@@ -29,13 +142,13 @@ $.fn.setBackgroundPosition = function(pos) {
 	return this;
 };
 
-var MD5 = function(string) {
-	if (!string) {
+var MD5 = function(str) {
+	if (!str) {
 		return "";
 	}
-	string = string.replace(/http:\/\/.+~~/g, '');
-	string = string.replace(/nodeID:\/\/.+~~/g, '');
-	string = string.replace(/_:\/\/.+~~/g, '');
+	str = str.replace(/http:\/\/.+~~/g, '');
+	str = str.replace(/nodeID:\/\/.+~~/g, '');
+	str = str.replace(/_:\/\/.+~~/g, '');
 	function RotateLeft(lValue, iShiftBits) {
 		return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
 	}
@@ -175,9 +288,9 @@ var MD5 = function(string) {
 	var S31 = 4, S32 = 11, S33 = 16, S34 = 23;
 	var S41 = 6, S42 = 10, S43 = 15, S44 = 21;
 
-	string = Utf8Encode(string);
+	str = Utf8Encode(str);
 
-	x = ConvertToWordArray(string);
+	x = ConvertToWordArray(str);
 
 	a = 0x67452301;
 	b = 0xEFCDAB89;
@@ -274,8 +387,4 @@ function breakLines(msg) {
 	msg = msg.replace(/&/g, '&<span style="font-size:1px"> </span>');
 	msg = msg.replace(/%/g, '%<span style="font-size:1px"> </span>');
 	return msg;
-}
-
-function getSparqlConf(what, where, lodLiveProfile) {
-	return where.sparql && where.sparql[what] ? where.sparql[what] : lodLiveProfile['default'].sparql[what]
 }
