@@ -18,14 +18,11 @@
 
   var jwin = $(window), jbody = $(document.body);
 
-  /* Want to eliminate the jquery jsonp dependency, or include it in our utils at least */
-	$.jsonp.setup({
-		cache : true,
-		callbackParameter : 'callback',
-		callback : 'lodlive',
-		pageCache : true,
-		timeout : 30000
-	});
+  $.ajaxSetup({
+      contentType: 'application/json',
+      dataType: 'jsonp'
+  });
+
   // simple MD5 implementation to eliminate dependencies, can still pass in MD5 (or some other algorithm) as options.hashFunc if desired
   function hashFunc(str) {
     if (!str) { return str; }
@@ -105,7 +102,7 @@
     this.hashFunc = options.hashFunc || hashFunc;
     this.innerPageMap = {};
     this.storeIds = {};
-    this.boxTemplate = options.boxTemplate || DEFAULT_BOX_TEMPLATE;
+    this.boxTemplate = this.profile.boxTemplate || DEFAULT_BOX_TEMPLATE;
 
     // context.append('<div id="lodlogo" class="sprite"></div>');
 
@@ -510,8 +507,8 @@
     // TODO: make this more configurable by the instance or profile flags
     var guessedEndpoint = base + 'sparql?' + inst.profile.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
 
-    // FIXME: need to remove this dependency
-    $.jsonp({
+    // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
+    $.ajax({
       url : guessedEndpoint,
       success : function(data) {
 
@@ -1616,7 +1613,7 @@
         });
       }
 
-      $.jsonp({
+      $.ajax({
         url : url,
         beforeSend : function() {
           inst.context.append(destBox);
@@ -1700,7 +1697,7 @@
 
         } else {
 
-          $.jsonp({
+          $.ajax({
             url : SPARQLquery,
             beforeSend : function() {
               docInfo.html('<img style=\"margin-left:' + (docInfo.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
@@ -2194,7 +2191,7 @@
 
     var SPARQLquery = inst.composeQuery(val, 'bnode', URI);
 
-    $.jsonp({
+    $.ajax({
       url : SPARQLquery,
       beforeSend : function() {
         destBox.find('span[class=bnode]').html('<img src="img/ajax-loader-black.gif"/>');
@@ -2436,7 +2433,6 @@
 		// aggiungo al box il titolo
 		var result = "<div class=\"boxTitle\"><span class=\"ellipsis_text\">";
 		for (var a = 0; a < titles.length; a++) {
-
 			var resultArray = inst.getJsonValue(values, titles[a], titles[a].indexOf('http') == 0 ? '' : titles[a]);
 			if (titles[a].indexOf('http') != 0) {
 				if (result.indexOf($.trim(unescape(titles[a])) + " \n") == -1) {
@@ -2972,29 +2968,35 @@
 		} else {
 
       //TODO: remove jQuery jsonp dependency
-			$.jsonp({
+			$.ajax({
 				url : SPARQLquery,
 				beforeSend : function() {
 					destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
 				},
 				success : function(json) {
+          // console.log('sparql success', json);
 					json = json.results && json.results.bindings;
 					var conta = 0;
 					$.each(json, function(key, value) {
 						conta++;
+            var newVal = {}, newUri = {};
 						if (value.object.type === 'uri' || value.object.type === 'bnode') {
-
 							if (value.object.value != anUri) {
-
-                //FIXME:  replace evals
 								if (value.object.type === 'bnode') {
-									eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(anUri + '~~' + value.object.value) + '\'})');
+									newUri[value.property.value] = escape(anUri + '~~' + value.object.value);
+                  console.log('pushing new uri', newUri);
+                  uris.push(newUri);
+                  //eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(anUri + '~~' + value.object.value) + '\'})');
 								} else {
 									eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
 								}
 							}
 						} else {
-							eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+              console.log('not uri or bnode', value);
+              newVal[value.property.value] = escape(value.object.value);
+              console.log('pushing new value', newVal);
+              values.push(newVal);
+							//eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
 						}
 
 					});
@@ -3014,7 +3016,7 @@
 
 						var inverses = [];
             //FIXME: remove jQuery.jsonp dependency
-						$.jsonp({
+						$.ajax({
 							url : SPARQLquery,
 							beforeSend : function() {
 								destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 5) + 'px\" src="img/ajax-loader.gif"/>');
@@ -3127,7 +3129,7 @@
           uriId : resource
         });
       }
-      $.jsonp({
+      $.ajax({
         url : url,
         beforeSend : function() {
           destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
@@ -3249,7 +3251,7 @@
     //TODO: if composeQuery is a static utility function then this can be as well
     SPARQLquery = inst.composeQuery(SPARQLquery, 'allClasses');
     var classes = [];
-    $.jsonp({
+    $.ajax({
       url : SPARQLquery,
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
@@ -3316,7 +3318,7 @@
           SPARQLquery = value.proxy + '?endpoint=' + value.endpoint + "&" + (value.endpointType ? lodLiveProfile.endpoints[value.endpointType] : lodLiveProfile.endpoints.all) + "&query=" + escape(LodLiveUtils.getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
         }
 
-        $.jsonp({
+        $.ajax({
           url : SPARQLquery,
           timeout : 3000,
           beforeSend : function() {
@@ -3409,7 +3411,7 @@
 
     var values = [];
     //TODO: emlinate the jQuery jsonp dependency
-    $.jsonp({
+    $.ajax({
       url : SPARQLquery,
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
@@ -3468,7 +3470,7 @@
       strokeStyle : "#606060",
       x : (x2bis + x1 + ((x1 + 60) > x2 ? -60 : +60)) / 2,
       y : (y1 + y1 - ((x1 + 60) > x2 ? 18 : -18)) / 2,
-      text : ((x1 + 60) > x2 ? " « " : "") + label + ((x1 + 60) > x2 ? "" : " » "),
+      text : label ,
       align : "center",
       strokeWidth : 0.01,
       fontSize : 11,
