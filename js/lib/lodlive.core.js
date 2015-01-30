@@ -1235,7 +1235,7 @@
         if (inst.debugOn) {
           console.debug((new Date().getTime() - start) + '  addNewDoc 10 ');
         }
-        inst.renewDrag(context.children('.boxWrapper'));
+        inst.renewDrag(inst.context.children('.boxWrapper'));
         inst.drawaLine(obj, newObj, propertyName);
       } else {
         if (inst.debugOn) {

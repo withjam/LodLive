@@ -465,7 +465,7 @@ div.pageNext:hover {
 	background-position: -1390px -432px;
 }
 
-div#msg {
+div.lodlive-message-container {
 	position: absolute;
 	color: #393939;
 	line-height: 20px;
@@ -473,39 +473,39 @@ div#msg {
 	font-size: 11px
 }
 
-div#msg .endpoint {
+div.lodlive-message-container .endpoint {
 	padding: 0 0 0 10px;
 	background: #fff;
 	font-weight: bold;
 }
 
-div#msg .corner {
+div.lodlive-message-container .corner {
 	height: 10px;
 	background-position: -1030px -500px;
 }
 
-div#msg .from {
+div.lodlive-message-container .from {
 	padding: 6px 10px 0 10px;
 	background: #fff
 }
 
-div#msg .from.upperline {
+div.lodlive-message-container .from.upperline {
 	padding-bottom: 0;
 	padding-top: 0;
 }
 
-div#msg .separline {
+div.lodlive-message-container .separline {
 	height: 21px;
 	background-position: -1030px -520px;
 }
 
-div#msg .separ {
+div.lodlive-message-container .separ {
 	height: 21px;
 	background-position: -1030px -550px;
 	width: 330px;
 }
 
-div#msg .separ.inverse {
+div.lodlive-message-container .separ.inverse {
 	height: 21px;
 	background-position: -1030px -580px;
 	width: 330px;
