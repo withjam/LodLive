@@ -614,7 +614,7 @@
 
   //FIXME: replace globalInfoPanelMap
   LodLive.prototype.queryConsole = function(action, toLog) {
-    var inst = this, id = inst.hasFunc(toLog.uriId), localId = inst.hashFunc(toLog.id), infoMap = inst.infoPanelMap, panel = infoMap[id];
+    var inst = this, id = inst.hashFunc(toLog.uriId), localId = inst.hashFunc(toLog.id), infoMap = inst.infoPanelMap, panel = infoMap[id];
 
     switch (action) {
       case 'init': 
@@ -1357,7 +1357,7 @@
         }
       }
 
-      generatedRev = $.jStorage.get('storeIds-generatedByRev-' + id);
+      generatedRev = inst.storeIds['rev' +  id];
       //TODO: three loops? look for a way to simplify
       if (generatedRev) {
 
