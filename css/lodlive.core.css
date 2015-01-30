@@ -337,7 +337,7 @@ a.relatedImage {
 	height: 3000px;
 }
 
-#docInfo {
+.lodlive-docinfo {
 	position: absolute;
 	width: 280px;
 	z-index: 99999;
@@ -347,13 +347,14 @@ a.relatedImage {
 	font-weight: normal;
 	margin-top: 10px;
 	margin-right: 20px
+  right: 0;
 } 
-#docInfo ul {
+.lodlive-docinfo ul {
 	padding: 0;
 	margin: 0;
 }
 
-#docInfo ul li a {
+.lodlive-docinfo ul li a {
 	display: block;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -362,13 +363,13 @@ a.relatedImage {
 	font-size: 11px;
 }
 
-#docInfo .topSection {
+.lodlive-docinfo .topSection {
 	background-position: -264px -390px;
 	height: 20px;
 	line-height: 20px;
 }
 
-#docInfo .topSection span {
+.lodlive-docinfo .topSection span {
 	display: block;
 	float: right;
 	width: 12px;
@@ -376,26 +377,26 @@ a.relatedImage {
 	cursor: pointer;
 }
 
-#docInfo .section {
+.lodlive-docinfo .section {
 	background: #000;
 	padding-left: 10px;
 	padding-right: 10px;
 	overflow-x: hidden;
 }
 
-#docInfo .separ {
+.lodlive-docinfo .separ {
 	background-position: -265px -460px;
 	height: 20px;
 }
 
-#docInfo .separLast {
+.lodlive-docinfo .separLast {
 	height: 11px;
 	background: #c7c7c7;
 	position: relative;
 	top: -10px;
 }
 
-#docInfo label {
+.lodlive-docinfo label {
 	font-size: 11px;
 	line-height: 20px;
 	font-weight: 800;
@@ -583,7 +584,7 @@ div#msg .separ.inverse {
 	top: 17px;
 }
 
-.toolBox .innerActionBox {
+.lodlive-toolbox .innerActionBox {
 	cursor: pointer;
 	display: block;
 	width: 15px;
@@ -597,7 +598,7 @@ div#msg .separ.inverse {
 	top: 3px;
 }
 
-.toolBox {
+.lodlive-toolbox {
 	background-position: -135px -395px;
 	height: 23px;
 	width: 80px;
@@ -729,7 +730,7 @@ div#msg .separ.inverse {
 	padding: 12px 20px 0 20px
 }
 
-#docInfo .slimScrollDiv {
+.lodlive-docinfo .slimScrollDiv {
 	color: #fff;
 	border: 0;
 	background-color:#c7c7c7; 

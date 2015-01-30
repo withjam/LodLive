@@ -103,6 +103,7 @@
     this.innerPageMap = {};
     this.storeIds = {};
     this.boxTemplate = this.profile.boxTemplate || DEFAULT_BOX_TEMPLATE;
+    this.ignoreBnodes = options.ignoreBnodes;
 
     // context.append('<div id="lodlogo" class="sprite"></div>');
 
@@ -1041,8 +1042,8 @@
       start = new Date().getTime();
     }
 
-    var top = (ch - bh) / 2 + (inst.context.scrollTop() || 0);
-    var left = (cw - bw) / 2 + (inst.context.scrollLeft() || 0);
+    var top = (ch - 65) / 2 + (inst.context.scrollTop() || 0);
+    var left = (cw - 65) / 2 + (inst.context.scrollLeft() || 0);
     var props = {
       position : 'absolute',
       left : left,
@@ -1468,13 +1469,17 @@
             inst.docInfo('', 'close');
             var idx = 0;
             var elements = obj.find('.relatedBox:visible');
-            elements.doTimeout(250, function() {
-              var elem = this.eq(idx++);
+            var totalElements = elements.length;
+            function onTo() {
+              var elem= elements.eq(idx++);
               if (elem.length) {
-                elem.trigger('click');
-                return true;
+                elem.click();
               }
-            });
+              if (idx < totalElements) {
+                window.setTimeout(onTo, 75);
+              }
+            }
+            window.setTimeout(onTo, 75);
           });
           box.hover(function() {
             tools.setBackgroundPosition({
@@ -1620,7 +1625,7 @@
           destBox.html('<img style=\"margin-left:' + (destBox.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
           destBox.css({
             position : 'fixed',
-            left : $(window).width() - $('#docInfo').width() - 20,
+            right: 20,
             top : 0
           });
           destBox.attr('data-top', destBox.position().top);
@@ -1679,7 +1684,7 @@
           docInfo.fadeOut('fast', null, function() {
             docInfo.remove();
           });
-          if ($('#docInfo[rel="info-' + URI + '"]').length > 0) {
+          if ($('.lodlive-docinfo[rel="info-' + URI + '"]').length > 0) {
             return;
           }
         }
@@ -1703,8 +1708,7 @@
               docInfo.html('<img style=\"margin-left:' + (docInfo.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
               docInfo.css({
                 position : 'fixed',
-                left : $(window).width() - $('#docInfo').width() - 20,
-                // height : $(window).height() - 20,
+                right: 15,
                 top : 0
               });
 
@@ -2978,25 +2982,16 @@
 					json = json.results && json.results.bindings;
 					var conta = 0;
 					$.each(json, function(key, value) {
-						conta++;
             var newVal = {}, newUri = {};
+            conta++;
 						if (value.object.type === 'uri' || value.object.type === 'bnode') {
-							if (value.object.value != anUri) {
-								if (value.object.type === 'bnode') {
-									newUri[value.property.value] = escape(anUri + '~~' + value.object.value);
-                  console.log('pushing new uri', newUri);
-                  uris.push(newUri);
-                  //eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(anUri + '~~' + value.object.value) + '\'})');
-								} else {
-									eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
-								}
+							if (value.object.value != anUri && (value.object.type !== 'bnode' || !inst.ignoreBnodes)) {
+                newUri[value.property.value] = (value.object.type === 'bnode') ? escape(anUri + '~~' + value.object.value) : escape(value.object.value);
+                uris.push(newUri);
 							}
 						} else {
-              console.log('not uri or bnode', value);
               newVal[value.property.value] = escape(value.object.value);
-              console.log('pushing new value', newVal);
               values.push(newVal);
-							//eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
 						}
 
 					});
