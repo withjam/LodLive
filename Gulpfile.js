@@ -7,7 +7,7 @@ var gzip = require('gulp-gzip');
  
 gulp.task('deps', function() {
   return gulp.src('./js/deps/*.js')
-    .pipe(concat('deps.js'))
+    .pipe(concat('ml-lodlive.deps.js'))
     .pipe(gulp.dest('./dist'));
 });
 
