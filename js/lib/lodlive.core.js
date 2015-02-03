@@ -33,7 +33,7 @@
     return r;
   }
 
-  var DEFAULT_BOX_TEMPLATE = '<div class="boxWrapper defaultBoxTemplate" id="first"><div class="box sprite"></div></div>';
+  var DEFAULT_BOX_TEMPLATE = '<div class="boxWrapper lodlive-node defaultBoxTemplate" id="first"><div class="lodlive-node-label box sprite"></div></div>';
 
   /** LodLiveProfile constructor - Not sure this is even necessary, a basic object should suffice - I don't think it adds any features or logic
     * @Class LodLiveProfile
@@ -1448,8 +1448,52 @@
     });
 
     obj.find('.actionBox[rel=tools]').click(function() {
+      var container = $(this), tools = container.find('.lodlive-toolbox');
 
-      if (!inst.context.find('.toolBox:visible').length) {
+      // generate toolbox dom on first click
+      // TODO: should do this during initialization so we can configure which boxes to show
+      if (!tools.length) {
+        tools = $('<div class="lodlive-toolbox"></div>');
+        tools.append('<div class="innerActionBox infoQ" rel="infoQ" title="' + LodLiveUtils.lang('moreInfoOnThis') + '"><span class="fa fa-info-circle"></span></div>');
+        tools.append('<div class="innerActionBox center" rel="center" title="' + LodLiveUtils.lang('centerClose') + '"><span class="fa fa-dot-circle-o"></span></div>');
+        tools.append('<div class="innerActionBox newpage" rel="newpage" title="' + LodLiveUtils.lang('openOnline') + '"><span class="fa fa-external-link-square"></span></div>');
+        tools.append('<div class="innerActionBox expand" rel="expand" title="' + LodLiveUtils.lang('openRelated') + '"><span class="fa fa-arrows-alt"></span></div>');
+        tools.append('<div class="innerActionBox remove" rel="remove" title="' + LodLiveUtils.lang('removeResource') + '"><span class="fa fa-trash"></span></div></div>');
+
+        var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
+        container.append(toolWrapper);
+        // delegate the click handler
+        tools.on('click', '.innerActionBox', function() {
+          var type = $(this).attr('rel');
+          switch (type) {
+            case 'infoQ': break;
+            case 'center': break;
+            case 'newPage': break;
+            case 'expand': 
+              var idx = 0;
+              var elements = obj.find('.relatedBox:visible');
+              var totalElements = elements.length;
+              var onTo = function() {
+                var elem= elements.eq(idx++);
+                if (elem.length) {
+                  elem.click();
+                }
+                if (idx < totalElements) {
+                  window.setTimeout(onTo, 75);
+                }
+              }
+              window.setTimeout(onTo, 75);
+              break;
+            case 'remove': break;
+          }
+        });
+        tools.fadeIn('fast');
+      } else {
+        tools.fadeToggle('fast');
+      }
+      return;
+
+      if (!inst.context.find('.lodlive-toolbox:visible').length) {
 
         var pos = obj.position();
         //TODO: convert to single quotes, but not critical enough to bother first pass
@@ -2470,11 +2514,6 @@
 		destBox.append(jResult);
 		var resourceTitle = jResult.text();
     jResult.data('tooltip', resourceTitle);
-		// posiziono il titolo al centro del box
-		jResult.css({
-			'marginTop' : jResult.height() == 13 ? 58 : jResult.height() == 26 ? 51 : 45,
-			'height' : jResult.height() + 5
-		});
 
 		destBox.hover(function() {
         var msgTitle = jResult.text();
@@ -2885,7 +2924,7 @@
 				$(this).parent().children('.' + pager.attr("data-page")).fadeIn('fast');
 			});
 		}); {
-			var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  >&#160;</div>");
+			var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  ><span class=\"fa fa-list\"></span></div>");
 			containerBox.append(obj);
 			obj.hover(function() {
 				$(this).parent().children('.box').setBackgroundPosition({
@@ -2896,7 +2935,7 @@
 					y : 0
 				});
 			});
-			obj = $("<div class=\"actionBox tools\" rel=\"tools\" >&#160;</div>");
+			obj = $('<div class="actionBox tools" rel="tools" ><span class="fa fa-cog"></span></div>');
 			containerBox.append(obj);
 			obj.hover(function() {
 				containerBox.children('.box').setBackgroundPosition({
@@ -3220,9 +3259,6 @@
     destBox.children('.box').html('');
     var jResult = $("<div class=\"boxTitle\"><span>" + LodLiveUtils.lang('enpointNotAvailable') + "</span></div>");
     destBox.children('.box').append(jResult);
-    jResult.css({
-      'marginTop' : jResult.height() == 13 ? 58 : jResult.height() == 26 ? 51 : 45
-    });
     var obj = $("<div class=\"actionBox tools\">&#160;</div>");
     obj.click(function() {
       inst.removeDoc(destBox);
