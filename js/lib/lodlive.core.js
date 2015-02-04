@@ -1377,6 +1377,59 @@
     }
   };
 
+  var _builtins = {
+    'expand': {
+      title: 'Expand all',
+      icon: 'fa fa-arrows-alt',
+      handler: function(obj, inst) {
+        var idx = 0;
+        var elements = obj.find('.relatedBox:visible');
+        var totalElements = elements.length;
+        var onTo = function() {
+          var elem= elements.eq(idx++);
+          if (elem.length) {
+            elem.click();
+          }
+          if (idx < totalElements) {
+            window.setTimeout(onTo, 75);
+          }
+        };
+        window.setTimeout(onTo, 75);
+      }
+    },
+    'info': {
+      title: 'More info',
+      icon: 'fa fa-info-circle',
+      handler: function(obj, inst) {
+        inst.queryConsole('show', {
+          uriId : obj.attr('rel')
+        });
+      }
+    },
+    'rootNode': {
+      title: 'Make root node',
+      icon: 'fa fa-',
+      handler: function(obj, instance) {
+        instance.context.empty();
+        instance.init(obj.attr('rel'));
+      }
+    },
+    'remove': {
+      title: 'Remove this node',
+      icon: 'fa fa-trash',
+      hander: function(obj, inst) {
+        inst.removeDoc(obj);
+      }
+    },
+    'openPage': {
+      title: 'Open in another page',
+      icon: 'fa fa-external-link',
+      handler: function(obj, inst) {
+        window.open(obj.attr('rel'));
+      }
+    }
+  };
+
   LodLive.prototype.addClick = function(obj, callback) {
     var inst = this;
     if (inst.debugOn) {
@@ -1447,52 +1500,16 @@
       // TODO: should do this during initialization so we can configure which boxes to show
       if (!tools.length) {
         tools = $('<div class="lodlive-toolbox"></div>');
-        tools.append('<div class="innerActionBox infoQ" rel="infoQ" title="' + LodLiveUtils.lang('moreInfoOnThis') + '"><span class="fa fa-info-circle"></span></div>');
-        tools.append('<div class="innerActionBox center" rel="center" title="' + LodLiveUtils.lang('centerClose') + '"><span class="fa fa-dot-circle-o"></span></div>');
-        tools.append('<div class="innerActionBox newpage" rel="newpage" title="' + LodLiveUtils.lang('openOnline') + '"><span class="fa fa-external-link-square"></span></div>');
-        tools.append('<div class="innerActionBox expand" rel="expand" title="' + LodLiveUtils.lang('openRelated') + '"><span class="fa fa-arrows-alt"></span></div>');
-        tools.append('<div class="innerActionBox remove" rel="remove" title="' + LodLiveUtils.lang('removeResource') + '"><span class="fa fa-trash"></span></div></div>');
-
+        jQuery.each(inst.UI.tools, function() {
+          var toolConfig = this, t;
+          if (toolConfig.builtin) {
+            toolConfig = _builtins[toolConfig.builtin];
+          }
+          t = jQuery('<div class="innerActionBox" title="' + LodLiveUtils.lang(toolConfig.title) + '"><span class="' + toolConfig.icon + '"></span></div>');
+          t.appendTo(tools).on('click', function() { toolConfig.handler.call(inst, obj, inst); });
+        });
         var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
         container.append(toolWrapper);
-        // delegate the click handler
-        tools.on('click', '.innerActionBox', function() {
-          var type = $(this).attr('rel');
-          switch (type) {
-            case 'infoQ':             
-              inst.queryConsole('show', {
-                uriId : obj.attr('rel')
-              });
-              break;
-            case 'center':             
-              // redraw the map with this node as the root
-              inst.context.empty();
-              inst.init(obj.attr('rel'));
-              break;
-            case 'newPage': 
-              window.open(obj.attr('rel'));
-              break;
-            case 'expand': 
-              var idx = 0;
-              var elements = obj.find('.relatedBox:visible');
-              var totalElements = elements.length;
-              var onTo = function() {
-                var elem= elements.eq(idx++);
-                if (elem.length) {
-                  elem.click();
-                }
-                if (idx < totalElements) {
-                  window.setTimeout(onTo, 75);
-                }
-              }
-              window.setTimeout(onTo, 75);
-              break;
-            case 'remove': 
-              // why do we want a remove?  It doesn't affect the actual relationships
-              inst.removeDoc(obj);
-              break;
-          }
-        });
         tools.fadeIn('fast');
       } else {
         tools.fadeToggle('fast');
