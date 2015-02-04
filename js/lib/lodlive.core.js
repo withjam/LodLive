@@ -1408,7 +1408,7 @@
     },
     'rootNode': {
       title: 'Make root node',
-      icon: 'fa fa-',
+      icon: 'fa fa-dot-circle-o',
       handler: function(obj, instance) {
         instance.context.empty();
         instance.init(obj.attr('rel'));

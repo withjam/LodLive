@@ -50,22 +50,22 @@ MarkLogicProfile.default = {
 MarkLogicProfile.UI = {
   ignoreBnodes: true,
   tools: [
+    { builtin: 'rootNode'},
     { 
       icon: 'fa fa-thumb-tack', 
       title: 'Pin in SPARQL',
       handler: function(node, inst) {
         var uri = node.attr('rel');
-        console.log('click on Pin', this, node);
         if (node.is('.pinned')) {
           node.removeClass('pinned');
-          var ind = this.pinned.indexOf(uri);
-          this.pinned.slice(ind,1);
+          var ind = inst.pinned.indexOf(uri);
+          inst.pinned.slice(ind,1);
         } else {
           node.addClass('pinned');
-          if (!this.pinned) {
-            this.pinned = [ uri ];
+          if (!inst.pinned) {
+            inst.pinned = [ uri ];
           } else {
-            this.pinned.push(uri);
+            inst.pinned.push(uri);
           }
         }
       }
