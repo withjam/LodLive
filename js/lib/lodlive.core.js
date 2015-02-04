@@ -61,23 +61,24 @@
   /**
     * Initializes a new LodLive instance based on the given context (dom element) and possible options
     *
-    * @param {Element|string} context jQuery element or string, if a string jQuery will use it as a selector to find the element
+    * @param {Element|string} container jQuery element or string, if a string jQuery will use it as a selector to find the element
     * @param {object=} options optional hash of options
     */
-  LodLive.prototype.init = function(context,options) {
+  LodLive.prototype.init = function(container,options) {
     var instance = this, firstUri;
-    console.log('initializing LodLive', context, options);
+    console.log('initializing LodLive', container, options);
     if (typeof options === 'string') {
       firstUri = options;
       options = {};
     } else {
       firstUri = options.firstUri;
     }
-    if (typeof context === 'string') {
-      context = jQuery(context);
+    this.options = options;
+    if (typeof container === 'string') {
+      container = jQuery(container);
     }
-    if (!context.length) {
-      throw 'LodLive: no context found';
+    if (!container.length) {
+      throw 'LodLive: no container found';
     }
 
     // TODO: look these up on the context object as data-lodlive-xxxx attributes
@@ -93,8 +94,9 @@
     $.jStorage.set('showInfoConsole', $.jStorage.get('showInfoConsole', true));
     */
     // our instance containers
-    this.debugOn = options.debugOn && window.console; // don't debug if there is no console
-    this.context = context;
+    this.debugOn = options.debugOn && window.console;
+    this.container = container; // don't debug if there is no console
+    this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
     this.imagesMap = {};
     this.mapsMap = {};
     this.infoPanelMap = {};
@@ -114,7 +116,7 @@
     firstBox.attr('id', this.hashFunc(firstUri));
     firstBox.attr('rel', firstUri);
     firstBox.css('zIndex',1);
-    context.append(firstBox);
+    this.context.append(firstBox);
 
     // inizializzo la mappa delle classi
     this.classMap = {
@@ -123,7 +125,7 @@
     };
 
     // attivo le funzioni per il drag
-    this.renewDrag(context.children('.boxWrapper'));
+    this.renewDrag(this.context.children('.boxWrapper'));
 
     // carico il primo documento
     this.openDoc(firstUri, firstBox);
@@ -1047,20 +1049,21 @@
     var props = {
       position : 'absolute',
       left : left,
-      top : top
+      top : top,
+      opacity: 0
     };
 
     //console.log('centering top: %s, left: %s', top, left);
 
     //FIXME: we don't want to assume we scroll the entire window here, since we could be just a portion of the screen or have multiples
-    //window.scrollBy(-cw, -ch);
+    inst.context.parent().scrollTop(ch / 2 - inst.context.parent().height() / 2 + 60);
+    inst.context.parent().scrollLeft(cw / 2 - inst.context.parent().width() / 2 + 60);
+    console.log(inst.context.parent().scrollTop());
     //window.scrollBy(cw / 2 - jwin.width() / 2 + 25, ch / 2 - jwin.height() / 2 + 65);
+    aBox.css(props)
 
-    try {
-      aBox.animate(props, 1000);
-    } catch (e) {
-      aBox.css(props);
-    }
+      aBox.animate({ opacity: 1}, 1000);
+
 
     if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  centerBox ');
@@ -1466,9 +1469,22 @@
         tools.on('click', '.innerActionBox', function() {
           var type = $(this).attr('rel');
           switch (type) {
-            case 'infoQ': break;
-            case 'center': break;
-            case 'newPage': break;
+            case 'infoQ':             
+              inst.queryConsole('show', {
+                uriId : obj.attr('rel')
+              });
+              break;
+            case 'center':             
+              // redraw the map with this node as the root
+              inst.context.empty();
+              var newll = new LodLive(inst.profile);
+              inst.context.data('lodlive-instance', newll);
+              var newOpts = jQuery.extend(inst.options,{ firstUri: obj.attr('rel') });
+              newll.init(inst.context, newOpts);
+              break;
+            case 'newPage': 
+              window.open(obj.attr('rel'));
+              break;
             case 'expand': 
               var idx = 0;
               var elements = obj.find('.relatedBox:visible');
@@ -1484,147 +1500,17 @@
               }
               window.setTimeout(onTo, 75);
               break;
-            case 'remove': break;
+            case 'remove': 
+              // why do we want a remove?  It doesn't affect the actual relationships
+              inst.removeDoc(obj);
+              break;
           }
         });
         tools.fadeIn('fast');
       } else {
         tools.fadeToggle('fast');
       }
-      return;
 
-      if (!inst.context.find('.lodlive-toolbox:visible').length) {
-
-        var pos = obj.position();
-        //TODO: convert to single quotes, but not critical enough to bother first pass
-        var tools = $("<div class=\"lodlive-toolbox sprite\" style=\"display:none\" ><div class=\"innerActionBox infoQ\" rel=\"infoQ\" title=\"" + LodLiveUtils.lang('moreInfoOnThis') + "\" >&#160;</div><div class=\"innerActionBox center\" rel=\"center\" title=\"" + LodLiveUtils.lang('centerClose') + "\" >&#160;</div><div class=\"innerActionBox newpage\" rel=\"newpage\" title=\"" + LodLiveUtils.lang('openOnline') + "\" >&#160;</div><div class=\"innerActionBox expand\" rel=\"expand\" title=\"" + LodLiveUtils.lang('openRelated') + "\" >&#160;</div><div class=\"innerActionBox remove\" rel=\"remove\" title=\"" + LodLiveUtils.lang('removeResource') + "\" >&#160;</div></div>");
-        inst.context.append(tools);
-        //FIXME: eliminate inline CSS when possible
-        tools.css({
-          top : pos.top - 23,
-          left : pos.left + 10
-        });
-        tools.fadeIn('fast');
-        tools.find('.innerActionBox[rel=expand]').each(function() {
-          var box = $(this);
-          box.click(function() {
-
-            tools.remove();
-            inst.docInfo('', 'close');
-            var idx = 0;
-            var elements = obj.find('.relatedBox:visible');
-            var totalElements = elements.length;
-            function onTo() {
-              var elem= elements.eq(idx++);
-              if (elem.length) {
-                elem.click();
-              }
-              if (idx < totalElements) {
-                window.setTimeout(onTo, 75);
-              }
-            }
-            window.setTimeout(onTo, 75);
-          });
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -515
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-        tools.find('.innerActionBox[rel=infoQ]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            tools.remove();
-            inst.queryConsole('show', {
-              uriId : obj.attr('rel')
-            });
-          });
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -425
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-        tools.find('.innerActionBox[rel=remove]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            // $('.tipsy').remove();
-            inst.removeDoc(obj);
-            tools.remove();
-            inst.docInfo('', 'close');
-          });
-
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -545
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-        tools.find('.innerActionBox[rel=newpage]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            tools.remove();
-            inst.docInfo('', 'close');
-            window.open(obj.attr('rel'));
-          });
-
-          box.hover(function() {
-            //FIXME: is this meant to be 'tools' or a different parent in between?
-            box.parent().setBackgroundPosition({
-              y : -485
-            });
-          }, function() {
-            box.parent().setBackgroundPosition({
-              y : -395
-            });
-          });
-
-        });
-
-        tools.find('.innerActionBox[rel=center]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            // what is this trying to do?
-            var loca = $(location).attr('href');
-            if (loca.indexOf('?http') != -1) {
-              document.location = loca.substring(0, loca.indexOf('?')) + '?' + obj.attr('rel');
-            }
-          });
-
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -455
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-      } else {
-
-        inst.context.find('.toolBox').fadeOut('fast', null, function() {
-
-          $('.toolBox').remove();
-
-        });
-      }
     });
 
     //FIXME: why do we need a callback if not async?

@@ -1,3 +1,15 @@
+.lodlive-graph-container {
+  width: 110%;
+  height: 110%;
+  overflow: scroll;
+}
+
+.lodlive-graph-context {
+  position: relative;
+  width: 300%;
+  height: 300%;
+}
+
 .lodlive-node .lodlive-node-label{ 
   width: 120px;
   height: 120px;
