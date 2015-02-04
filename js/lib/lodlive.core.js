@@ -42,13 +42,6 @@
 
   }
 
-  /** LodLive constructor takes an instance of LodLiveProfile which should have endpoints defined
-    * There is a bit of overlap with the options passed to init.  Perhaps we combine them and possibly skip the init step?
-    */
-  function LodLive(profile) {
-    this.profile = profile;
-  }
-
   //utility functions - might belong somewhere else but here for now so I can see them
   LodLive.shortenKey = function(str) {
     str = jQuery.trim(str);
@@ -64,22 +57,37 @@
     * @param {Element|string} container jQuery element or string, if a string jQuery will use it as a selector to find the element
     * @param {object=} options optional hash of options
     */
-  LodLive.prototype.init = function(container,options) {
-    var instance = this, firstUri;
-    console.log('initializing LodLive', container, options);
-    if (typeof options === 'string') {
-      firstUri = options;
-      options = {};
-    } else {
-      firstUri = options.firstUri;
-    }
+  function LodLive(container,options) {
+    this.container = container;
     this.options = options;
+    this.UI = options.UI || {};
+    this.debugOn = options.debugOn && window.console; // don't debug if there is no console
+
+    // container elements
+    this.container = container; 
+    this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
     if (typeof container === 'string') {
       container = jQuery(container);
     }
     if (!container.length) {
       throw 'LodLive: no container found';
     }
+
+  }
+
+  LodLive.prototype.init = function(firstUri) {
+    var instance = this;
+
+    // instance data
+    this.imagesMap = {};
+    this.mapsMap = {};
+    this.infoPanelMap = {};
+    this.connection = {};
+    this.hashFunc = this.options.hashFunc || hashFunc;
+    this.innerPageMap = {};
+    this.storeIds = {};
+    this.boxTemplate =  this.options.boxTemplate || DEFAULT_BOX_TEMPLATE;
+    this.ignoreBnodes = this.UI.ignoreBnodes;
 
     // TODO: look these up on the context object as data-lodlive-xxxx attributes
     // store settings on the instance
@@ -93,24 +101,7 @@
     $.jStorage.set('doDrawMap', $.jStorage.get('doDrawMap', true));
     $.jStorage.set('showInfoConsole', $.jStorage.get('showInfoConsole', true));
     */
-    // our instance containers
-    this.debugOn = options.debugOn && window.console;
-    this.container = container; // don't debug if there is no console
-    this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
-    this.imagesMap = {};
-    this.mapsMap = {};
-    this.infoPanelMap = {};
-    this.connection = {};
-    this.hashFunc = options.hashFunc || hashFunc;
-    this.innerPageMap = {};
-    this.storeIds = {};
-    this.boxTemplate = this.profile.boxTemplate || DEFAULT_BOX_TEMPLATE;
-    this.ignoreBnodes = options.ignoreBnodes;
 
-    // context.append('<div id="lodlogo" class="sprite"></div>');
-
-    // creo il primo box, lo aggiungo al documento e lo posiziono
-    // orizzontalmente nel centro
     var firstBox = $(this.boxTemplate);
     this.centerBox(firstBox);
     firstBox.attr('id', this.hashFunc(firstUri));
@@ -118,9 +109,8 @@
     firstBox.css('zIndex',1);
     this.context.append(firstBox);
 
-    // inizializzo la mappa delle classi
     this.classMap = {
-      // randomize first color
+      // TODO: let CSS drive color
       counter : Math.floor(Math.random() * 13) + 1
     };
 
@@ -441,7 +431,7 @@
     * @returns {string} the url
     */
   LodLive.prototype.composeQuery = function(resource, module, testURI) {
-    var  url, res, endpoint, inst = this, lodLiveProfile = inst.profile;
+    var  url, res, endpoint, inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -460,11 +450,11 @@
 
           if (value.proxy) {
 
-            url = value.proxy + '?endpoint=' + value.endpoint + '&' + (value.endpointType ? inst.profile.endpoints[value.endpointType] : inst.profile.endpoints.all ) + '&query=' + encodeURIComponent(res);
+            url = value.proxy + '?endpoint=' + value.endpoint + '&' + (value.endpointType ? inst.options.endpoints[value.endpointType] : inst.options.endpoints.all ) + '&query=' + encodeURIComponent(res);
 
           } else {
 
-            url = value.endpoint + '?' + (value.endpointType ? inst.profile.endpoints[value.endpointType] : inst.profile.endpoints.all) + '&query=' + encodeURIComponent(res);
+            url = value.endpoint + '?' + (value.endpointType ? inst.options.endpoints[value.endpointType] : inst.options.endpoints.all) + '&query=' + encodeURIComponent(res);
 
           }
 
@@ -508,7 +498,7 @@
     var base = uri.replace(/(^http:\/\/[^\/]+\/).+/, '$1'), inst = this;
 
     // TODO: make this more configurable by the instance or profile flags
-    var guessedEndpoint = base + 'sparql?' + inst.profile.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
+    var guessedEndpoint = base + 'sparql?' + inst.options.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
 
     // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
     $.ajax({
@@ -1477,10 +1467,7 @@
             case 'center':             
               // redraw the map with this node as the root
               inst.context.empty();
-              var newll = new LodLive(inst.profile);
-              inst.context.data('lodlive-instance', newll);
-              var newOpts = jQuery.extend(inst.options,{ firstUri: obj.attr('rel') });
-              newll.init(inst.context, newOpts);
+              inst.init(obj.attr('rel'));
               break;
             case 'newPage': 
               window.open(obj.attr('rel'));
@@ -1532,12 +1519,12 @@
     var uris = [];
     var bnodes = [];
     var values = [];
-    var def = inst.profile['default'];
+    var def = inst.options['default'];
 
     if (def) {
 
       // attivo lo sparql interno basato su sesame
-      var res = LodLiveUtils.getSparqlConf('document', def, inst.profile).replace(/\{URI\}/ig, URI);
+      var res = LodLiveUtils.getSparqlConf('document', def, inst.options).replace(/\{URI\}/ig, URI);
       var url = def.endpoint + '?uri=' + encodeURIComponent(URI) + '&query=' + encodeURIComponent(res);
 
       if (inst.showInfoConsole) {
@@ -1686,7 +1673,7 @@
   };
 
   LodLive.prototype.processDraw = function(x1, y1, x2, y2, canvas, toId) {
-    var inst = this, start, lodLiveProfile = inst.profile;
+    var inst = this, start, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -1707,7 +1694,7 @@
       for (var o = 0; o < labeArray.length; o++) {
 
         if (lodLiveProfile.arrows[$.trim(labeArray[o])]) {
-          lineStyle = inst.profile.arrows[$.trim(labeArray[o])] + "Line";
+          lineStyle = inst.options.arrows[$.trim(labeArray[o])] + "Line";
         }
 
         var shortKey = LodLive.shortenKey(labeArray[o]);
@@ -2238,7 +2225,7 @@
     * @returns {string=} the property, if found
     */
   LodLive.prototype.getProperty = function(area, prop, context) {
-    var inst = this, lodLiveProfile = inst.profile;
+    var inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -2290,7 +2277,7 @@
 
 
 	LodLive.prototype.format = function(destBox, values, uris, inverses) {
-    var inst = this, classMap = inst.classMap, lodLiveProfile = inst.profile;
+    var inst = this, classMap = inst.classMap, lodLiveProfile = inst.options;
 
 		if (inst.debugOn) {
 			start = new Date().getTime();
@@ -3036,7 +3023,7 @@
 
   LodLive.prototype.parseRawResource = function(destBox, resource, fromInverse) {
 
-    var inst = this, values = [], uris = [], lodLiveProfile = inst.profile;
+    var inst = this, values = [], uris = [], lodLiveProfile = inst.options;
 
     if (lodLiveProfile['default']) {
       // attivo lo sparql interno basato su sesame
@@ -3199,7 +3186,7 @@
   };
 
   LodLive.prototype.findInverseSameAs = function(anUri, counter, inverse, callback, tot) {
-    var inst = this, lodLiveProfile = inst.profile;
+    var inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -3306,7 +3293,7 @@
   /** Find the subject
     */
   LodLive.prototype.findSubject = function(SPARQLquery, selectedClass, selectedValue, destBox, destInput) {
-    var inst = this, lodLiveProfile = inst.profile;
+    var inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -3463,9 +3450,9 @@
       // no method defaults to init
       if (!options.method || options.method.toLowerCase() === 'init') {
 
-        ll = new LodLive(options.profile);
+        ll = new LodLive(ele, options.profile);
         ele.data('lodlive-instance', ll);
-        ll.init(ele, options); // pass in this element and the complete options
+        ll.init(options.firstUri); // pass in this element and the complete options
 
       } else if (LodLive.prototype.hasOwnProperty(method) && ele.data('lodlive-instance')) {
 

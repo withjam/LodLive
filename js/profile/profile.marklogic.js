@@ -47,6 +47,10 @@ MarkLogicProfile.default = {
   }, // http://www.w3.org/2000/01/rdf-schema#label
 };
 
+MarkLogicProfile.UI = {
+  ignoreBnodes: true
+};
+
 MarkLogicProfile.endpoints = {
   all : 'output=json&format=json&timeout=0'
 };
