@@ -64,7 +64,7 @@
     this.debugOn = options.debugOn && window.console; // don't debug if there is no console
 
     // container elements
-    this.container = container; 
+    this.container = container.css('position', 'relative');
     this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
     if (typeof container === 'string') {
       container = jQuery(container);
@@ -123,15 +123,6 @@
     this.controlPanel('init');
     this.msg('', 'init');
 
-    jwin.bind('scroll', function() {
-      instance.docInfo(null, 'move');
-      instance.controlPanel('move');
-    });
-    jwin.bind('resize', function() {
-      instance.docInfo('', 'close');
-      instance.controlPanelDiv.remove();
-      instance.controlPanel('init');
-    });
   };
 
   LodLive.prototype.controlPanel = function(action) {
@@ -532,29 +523,19 @@
 
   LodLive.prototype.msg = function(msg, action, type, endpoint, inverse) {
     // area dei messaggi
-    var inst = this, msgPanel = inst.context.find('.lodlive-message-container'), msgs;
+    var inst = this, msgPanel = inst.container.find('.lodlive-message-container'), msgs;
     if (!msg) msg = '';
     switch(action) {
 
       case 'init': 
         if (!msgPanel.length) {
           msgPanel = $('<div class="lodlive-message-container"></div>');
-          inst.context.append(msgPanel);
+          inst.container.append(msgPanel);
         }
         break;
 
-      case 'move': 
-        msgPanel.hide();
-        msgPanel.css({
-          display : 'none'
-        });
-        break;
-
-      case 'hide':
-        msgPanel.hide();
-        break;
-
       default:
+        msgPanel.hide();
     }
     msgPanel.empty();
     msg = msg.replace(/http:\/\/.+~~/g, '');
@@ -566,16 +547,12 @@
     msgs = msg.split(' \n ');
 
     if (type === 'fullInfo') {
-      msgPanel.append('<div class="corner sprite"></div>');
       msgPanel.append('<div class="endpoint">' + endpoint + '</div>');
       // why 2?
       if (msgs.length === 2) {
-        msgPanel.append('<div class="separline sprite"></div>');
         msgPanel.append('<div class="from upperline">' + (msgs[0].length > 200 ? msgs[0].substring(0, 200) + '...' : msgs[0]) + '</div>');
-        msgPanel.append('<div class="separline sprite"></div>');
         msgPanel.append('<div class="from upperline">'+ msgs[1] + '</div>');
       } else {
-        msgPanel.append('<div class="separline sprite"></div>');
         msgPanel.append('<div class="from upperline">' + msgs[0] + '</div>');
       }
     } else {
@@ -592,13 +569,6 @@
         msgPanel.append('<div class="from">' + msgs[0] + '</div>');
       }
     }
-    //FIXME: eliminate inline css when possible
-    msgPanel.css({
-      left : 0,
-      top : jwin.height() - msgPanel.height(),
-      position : 'fixed',
-      zIndex : 99999999
-    });
 
     msgPanel.show();
 
@@ -1604,7 +1574,7 @@
   };
 
   LodLive.prototype.docInfo = function(obj, action) {
-    var inst = this, docInfo = inst.context.find('.lodlive-docinfo');
+    var inst = this, docInfo = inst.container.find('.lodlive-docinfo');
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -1613,19 +1583,16 @@
     switch(action) {
       case 'open':
 
-        var URI = obj.attr('rel');
-        if (docInfo.length) {
-          docInfo.fadeOut('fast', null, function() {
-            docInfo.remove();
-          });
-          if ($('.lodlive-docinfo[rel="info-' + URI + '"]').length > 0) {
-            return;
-          }
+        if (!docInfo.length) {
+          docInfo = $('<div class="lodlive-docinfo" rel="info-' + URI + '"></div>');
+          inst.container.append(docInfo);
         }
 
+        var URI = obj.attr('rel');
+        docInfo.attr('rel', URI);
+
         // predispongo il div contenente il documento
-        docInfo = $('<div class="lodlive-docinfo" rel="info-' + URI + '"></div>');
-        inst.context.append(docInfo);
+
         var SPARQLquery = inst.composeQuery(URI, 'document');
         var uris = [];
         var bnodes = [];
@@ -1638,17 +1605,6 @@
 
           $.ajax({
             url : SPARQLquery,
-            beforeSend : function() {
-              docInfo.html('<img style=\"margin-left:' + (docInfo.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
-              docInfo.css({
-                position : 'fixed',
-                right: 15,
-                top : 0
-              });
-
-              docInfo.attr('data-top', docInfo.position().top);
-
-            },
             success : function(json) {
               json = json.results && json.results.bindings;
 
@@ -1679,9 +1635,7 @@
         break;
 
         default:
-          docInfo.fadeOut('fast', null, function() {
-            docInfo.remove();
-          });
+          docInfo.fadeOut('fast');
     }
 
     if (inst.debugOn) {
@@ -1910,23 +1864,6 @@
     }
     // aggiungo al box le informazioni descrittive della risorsa
     var jContents = $('<div></div>');
-    var topSection = $('<div class="topSection sprite"><span>&#160;</span></div>');
-    jResult.append(topSection);
-    topSection.find('span').each(function() {
-      var span = $(this);
-      span.click(function() {
-        inst.docInfo('', 'close');
-      });
-      span.hover(function() {
-        topSection.setBackgroundPosition({
-          y : -410
-        });
-      }, function() {
-        topSection.setBackgroundPosition({
-          y : -390
-        });
-      });
-    });
 
     if (inst.debugOn) {
       console.debug("formatDoc " + 5);
@@ -1951,7 +1888,6 @@
       }
 
       jContents.append(jSection);
-      jContents.append("<div class=\"separ sprite\"></div>");
     }
 
     if (inst.debugOn) {
@@ -1960,7 +1896,6 @@
 
     if (imagesj) {
       jContents.append(imagesj);
-      jContents.append("<div class=\"separ sprite\"></div>");
     }
 
     if (webLinkResult) {
@@ -1974,7 +1909,6 @@
         });
       });
       jContents.append(jWebLinkResult);
-      jContents.append("<div class=\"separ sprite\"></div>");
     }
 
     if (inst.debugOn) {
@@ -1989,7 +1923,7 @@
             if (filter == akey) {
               var shortKey = label;
               try {
-                var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
+                var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div>");
                 jSection.find('label').each(function() {
                   $(this).hover(function() {
                     inst.msg($(this).attr('data-title'), 'show');
@@ -2022,7 +1956,7 @@
           }
           try {
 
-            var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
+            var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div>");
             jSection.find('label').each(function() {
               $(this).hover(function() {
                 inst.msg($(this).attr('data-title'), 'show');
@@ -2105,16 +2039,6 @@
       });
     });
 
-    if (jContents.height() + 40 > $(window).height()) {
-      destBox.find("div.separ:last").remove();
-      destBox.find("div.separLast").remove();
-      jContents.slimScroll({
-        height : $(window).height() - 40,
-        color : '#fff'
-      });
-    } else {
-      destBox.append("<div class=\"separLast\"></div>");
-    }
     if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  formatDoc ');
     }
@@ -2617,7 +2541,7 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						var objBox = $("<div class=\"groupedRelatedBox sprite\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
@@ -2642,7 +2566,7 @@
 					// if (alredyInserted <
 					// document.lodliveVars['relationsLimit']) {
 					if (innerCounter < 25) {
-						obj = $("<div class=\"aGrouped relatedBox sprite " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
+						obj = $("<div class=\"aGrouped relatedBox " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
 						// containerBox.append(obj);
 						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 						obj.attr("data-circlePos", innerCounter);
@@ -2657,7 +2581,7 @@
 					 */
 					innerCounter++;
 				} else {
-					obj = $("<div class=\"relatedBox sprite " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
+					obj = $("<div class=\"relatedBox " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
 					// containerBox.append(obj);
 					obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 					obj.attr("data-circlePos", a);
@@ -2708,7 +2632,7 @@
 						// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
 						// akey + "\" >" + (propertyGroup[akey].length) +
 						// "</div>");
-						var objBox = $("<div class=\"groupedRelatedBox sprite inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
@@ -2734,7 +2658,7 @@
 					// document.lodliveVars['relationsLimit']) {
 					if (innerCounter < 25) {
 						var destUri = unescape(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
-						obj = $("<div class=\"aGrouped relatedBox sprite inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
+						obj = $("<div class=\"aGrouped relatedBox inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
 						// containerBox.append(obj);
 						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 						obj.attr("data-circlePos", innerCounter);
@@ -2749,7 +2673,7 @@
 					 */
 					innerCounter++;
 				} else {
-					obj = $("<div class=\"relatedBox sprite inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
+					obj = $("<div class=\"relatedBox inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
 					// containerBox.append(obj);
 					obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 					obj.attr("data-circlePos", a);
