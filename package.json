@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "repository": "https://github.com/withjam/LodLive.git",
   "dependencies": {
+    "gulp-add-src": "^0.2.0",
     "gulp-concat": "^2.4.3",
     "gulp-gzip": "0.0.8",
     "gulp-rename": "^1.2.0",

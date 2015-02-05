@@ -1,6 +1,3805 @@
-"use strict";function lang(e){return $.jStorage.get("language")[$.jStorage.get("selectedLanguage")][e]}function breakLines(e){return e=e.replace(/\//g,'/<span style="font-size:1px"> </span>'),e=e.replace(/&/g,'&<span style="font-size:1px"> </span>'),e=e.replace(/%/g,'%<span style="font-size:1px"> </span>')}!function($){function hashFunc(e){if(!e)return e;for(var t=0,n=0;n<e.length;n++)t=(t<<5)-t+e.charCodeAt(n),t&=t;return t}function LodLiveProfile(){}function LodLive(e){this.profile=e}var jwin=$(window),jbody=$(document.body);$.ajaxSetup({contentType:"application/json",dataType:"jsonp"});var DEFAULT_BOX_TEMPLATE='<div class="boxWrapper defaultBoxTemplate" id="first"><div class="box sprite"></div></div>';LodLive.shortenKey=function(e){e=jQuery.trim(e);var t=e.lastIndexOf("/"),n=e.lastIndexOf("#");return e.substring(t>n?t+1:n+1)},LodLive.prototype.init=function(e,t){var n,o=this;if(console.log("initializing LodLive",e,t),"string"==typeof t?(n=t,t={}):n=t.firstUri,"string"==typeof e&&(e=jQuery(e)),!e.length)throw"LodLive: no context found";this.debugOn=t.debugOn&&window.console,this.context=e,this.imagesMap={},this.mapsMap={},this.infoPanelMap={},this.connection={},this.hashFunc=t.hashFunc||hashFunc,this.innerPageMap={},this.storeIds={},this.boxTemplate=this.profile.boxTemplate||DEFAULT_BOX_TEMPLATE,this.ignoreBnodes=t.ignoreBnodes;var i=$(this.boxTemplate);this.centerBox(i),i.attr("id",this.hashFunc(n)),i.attr("rel",n),i.css("zIndex",1),e.append(i),this.classMap={counter:Math.floor(13*Math.random())+1},this.renewDrag(e.children(".boxWrapper")),this.openDoc(n,i),this.controlPanel("init"),this.msg("","init"),jwin.bind("scroll",function(){o.docInfo(null,"move"),o.controlPanel("move")}),jwin.bind("resize",function(){o.docInfo("","close"),o.controlPanelDiv.remove(),o.controlPanel("init")})},LodLive.prototype.controlPanel=function(e){var t=this,n=t.controlPanelDiv;this.debugOn&&(start=(new Date).getTime()),"init"==e?(n=$('<div class="lodLiveControlPanel"></div>'),t.controlPanelDiv=n,n.css({left:0,top:10,position:"fixed",zIndex:999}),n.append('<div class="lodlive-panel lodlive-panel-options sprite" ></div>'),n.append('<div class="lodlive-panel lodlive-panel-legend sprite" ></div>'),n.append('<div class="lodlive-panel lodlive-panel-help sprite" ></div>'),n.append('<div class="lodlive-panel lodlive-panel-main" ></div>'),n.append('<div class="lodlive-panel2 lodlive-panel-maps sprite" ></div>'),n.append('<div class="lodlive-panel2 lodlive-panel-images sprite" ></div>'),n.children(".lodlive-panel-main,.lodlive-panel-panel2").hover(function(){$(this).setBackgroundPosition({y:-450})},function(){$(this).setBackgroundPosition({y:-400})}),this.context.append(n),n.attr("data-top",n.position().top),n.children(".lodlive-panel").click(function(){var e=$(this);n.children(".lodlive-panel,.lodlive-panel2").hide();var o=$('<div class="lodlive-panel lodlive-panel-close sprite" ></div>');o.click(function(){o.remove(),n.children("#panelContent").remove(),n.removeClass("justX"),n.children(".lodlive-panel,.lodlive-panel2").show(),n.children(".inactive").hide()}),o.hover(function(){$(this).setBackgroundPosition({y:-550})},function(){$(this).setBackgroundPosition({y:-500})}),n.append(o),o.css({position:"absolute",left:241,top:0});var i=$('<div class="lodlive-panel lodlive-panel-content"></div>');if(n.append(i),e.is(".lodlive-panel-options")){var a=$('<ul class="lodlive-panel-options-list"></ul>');i.append("<div></div>"),i.children("div").append("<h2>"+LodLiveUtils.lang("options")+"</h2>").append(a),a.append("<li "+(t.doInverse?'class="checked"':'class="check"')+' data-value="inverse" ><span class="spriteLegenda"></span>'+LodLiveUtils.lang("generateInverse")+"</li>"),a.append("<li "+(t.doAutoExpand?'class="checked"':'class="check"')+' data-value="autoExpand" ><span class="spriteLegenda"></span>'+LodLiveUtils.lang("autoExpand")+"</li>"),a.append("<li "+(t.doAutoSameas?'class="checked"':'class="check"')+' data-value="autoSameas"><span class="spriteLegenda"></span>'+LodLiveUtils.lang("autoSameAs")+"</li>"),a.append("<li "+(t.doCollectImages?'class="checked"':'class="check"')+' data-value="autoCollectImages"><span class="spriteLegenda"></span>'+LodLiveUtils.lang("autoCollectImages")+"</li>"),a.append("<li "+(t.doDrawMap?'class="checked"':'class="check"')+' data-value="autoDrawMap"><span class="spriteLegenda"></span>'+LodLiveUtils.lang("autoDrawMap")+"</li>"),a.append("<li>&#160;</li>"),a.append('<li class="reload"><span  class="spriteLegenda"></span>'+LodLiveUtils.lang("restart")+"</li>"),a.children(".reload").click(function(){context.lodlive("close")}),a.children("li[data-value]").click(function(){var e=$(this),o=e.data("value"),a=e.is(".check, :checked");if(e.is(".check")){switch(o){case"inverse":t.doInverse=a;break;case"autoExpand":t.doInverse=a;break;case"autoSameas":t.doAutoSameas=a;break;case"autoCollectImages":t.doCollectImages=a,n.children("div.lodlive-panel-images").toggleClass("inactive");break;case"autoDrawMap":t.doDrawMap=a,n.children("div.lodlive-panel-maps").toggleClass("inactive")}e.toggleClass("checked")}else if(e.is(".help")){var s=n.find(".lodlive-panel-help").children("div").clone();$(".videoHelp",s).fancybox({transitionIn:"elastic",transitionOut:"elastic",speedIn:400,type:"iframe",width:853,height:480,speedOut:200,hideOnContentClick:!1,showCloseButton:!0,overlayShow:!1}),i.append(s),s.height()>jwin.height()+10&&n.addClass("justX")}else if(e.is(".legend")){var r=n.find(".legenda").children("div").clone(),l=0;r.find("span.spriteLegenda").each(function(){$(this).css({"background-position":"-1px -"+20*l+"px"}),l++}),i.append(r),r.height()>jwin.height()+10&&n.addClass("justX")}})}t.doCollectImages||n.children("div.lodlive-panel-images").addClass("inactive").hide(),t.doDrawMap||n.children("div.lodlive-panel-maps").addClass("inactive").hide(),n.on("click",".lodlive-panel2",function(){var o=$(this);n.children(".lodlive-panel,.lodlive-panel2").hide();var a=$('<div class="lodlive-panel lodlive-close2 sprite" ></div>');a.click(function(){$(this).remove(),n.find(".lodlive-maps-container, .lodlive-images-container, .inactive").hide(),i.hide(),n.removeClass("justX"),n.children(".lodlive-panel,.lodlive-panel2").show()}),a.hover(function(){$(this).setBackgroundPosition({y:-550})},function(){$(this).setBackgroundPosition({y:-500})}),n.append(a);var s=n.find(".lodlive-panel2-content");if(s.length?s.show():(s=$('<div class="lodlive-panel2-content"></div>'),n.append(s)),o.is(".maps")){var r=s.find(".lodlive-maps-container");r.length?r.show():(r=$('<div class="lodlive-maps-container"></div>'),s.width(800),s.append(r),r.gmap3({action:"init",options:{zoom:2,mapTypeId:google.maps.MapTypeId.HYBRID}})),t.updateMapPanel(n)}else if(e.is(".images")){var l=panel2Contet.find(".lodlive-images-container");l.length?l.show():(l=$('<div class="lodlive-images-container"><span class="lodlive-images-count"></span></div>'),s.append(l)),t.updateImagePanel(n)}})})):"move"===e&&(n.is(".justX")?n.css({position:"absolute",left:jbody.scrollLeft(),top:n.data("top")}):(n.css({left:0,top:10,position:"fixed"}),n.position()&&n.data("top",n.position().top))),t.debugOn&&console.debug((new Date).getTime()-start+"  controlPanel ")},LodLive.prototype.close=function(){document.location=document.location.pathname},LodLive.prototype.composeQuery=function(e,t,n){var o,i,a,s=this,r=s.profile;return s.debugOn&&(start=(new Date).getTime()),jQuery.each(r.connection,function(l,d){for(var c=l.split(","),p=0;p<c.length;p++)if(0===(n?n:e).indexOf(c[p]))return i=LodLiveUtils.getSparqlConf(t,d,r).replace(/\{URI\}/gi,e.replace(/^.*~~/,"")),o=d.proxy?d.proxy+"?endpoint="+d.endpoint+"&"+(d.endpointType?s.profile.endpoints[d.endpointType]:s.profile.endpoints.all)+"&query="+encodeURIComponent(i):d.endpoint+"?"+(d.endpointType?s.profile.endpoints[d.endpointType]:s.profile.endpoints.all)+"&query="+encodeURIComponent(i),a=d.endpoint,!1}),s.debugOn&&console.debug((new Date).getTime()-start+"  composeQuery "),o||(o="http://system/dummy?"+e),a&&s.showInfoConsole&&s.queryConsole("log",{title:a,text:i,id:o,uriId:e}),o},LodLive.prototype.guessingEndpoint=function(e,t,n){var o=e.replace(/(^http:\/\/[^\/]+\/).+/,"$1"),i=this,a=o+"sparql?"+i.profile.endpoints.all+"&query="+encodeURIComponent("select * where {?a ?b ?c} LIMIT 1");$.ajax({url:a,success:function(e){e&&e.results&&e.results.bindings[0]?(i.connections[o]={endpoint:o+"sparql"},t()):n()},error:function(){i.debugOn&&console.log("guessingEndpointError",arguments),n()}})},LodLive.prototype.msg=function(e,t,n,o,i){var a,s=this,r=s.context.find(".lodlive-message-container");switch(e||(e=""),t){case"init":r.length||(r=$('<div class="lodlive-message-container"></div>'),s.context.append(r));break;case"move":r.hide(),r.css({display:"none"});break;case"hide":r.hide()}r.empty(),e=e.replace(/http:\/\/.+~~/g,""),e=e.replace(/nodeID:\/\/.+~~/g,""),e=e.replace(/_:\/\/.+~~/g,""),e=breakLines(e),e=e.replace(/\|/g,"<br />"),a=e.split(" \n "),"fullInfo"===n?(r.append('<div class="corner sprite"></div>'),r.append('<div class="endpoint">'+o+"</div>"),2===a.length?(r.append('<div class="separline sprite"></div>'),r.append('<div class="from upperline">'+(a[0].length>200?a[0].substring(0,200)+"...":a[0])+"</div>"),r.append('<div class="separline sprite"></div>'),r.append('<div class="from upperline">'+a[1]+"</div>")):(r.append('<div class="separline sprite"></div>'),r.append('<div class="from upperline">'+a[0]+"</div>"))):2===a.length?(r.append('<div class="from">'+a[0]+"</div>"),r.append(i?'<div class="separ inverse sprite"></div>':'<div class="separ sprite"></div>'),r.append('<div class="from">'+a[1]+"</div>")):r.append('<div class="from">'+a[0]+"</div>"),r.css({left:0,top:jwin.height()-r.height(),position:"fixed",zIndex:99999999}),r.show()},LodLive.prototype.queryConsole=function(e,t){var n=this,o=n.hashFunc(t.uriId),i=n.hashFunc(t.id),a=n.infoPanelMap,s=a[o];switch(e){case"init":s=n.context.find('<div id="q'+o+'" class="lodlive-query-console"></div>'),a[o]=s,n.infoPanelMap=a;break;case"log":if(s&&t){if(t.resource&&(s.append('<h3 class="sprite"><span>'+t.resource+'</span><a class="sprite">&#160;</a></h3>'),s.on("click","h3 a",function(){n.queryConsole("close",{uriId:t.uriId})}).hover(function(){$(this).setBackgroundPosition({x:-641})},function(){$(this).setBackgroundPosition({x:-611})})),t.title){var r=$('<h4 class="t'+i+' sprite"><span>'+t.title+"</span></h4>");s.append(r),r.hover(function(){r.setBackgroundPosition({y:-700})},function(){r.setBackgroundPosition({y:-650})}),r.click(function(){r.data("show")?(r.data("show",!1),r.setBackgroundPosition({x:-680}),r.removeClass("slideOpen"),r.next("div").slideToggle()):(r.data("show",!0),r.setBackgroundPosition({x:-1290}),s.find(".slideOpen").click(),r.addClass("slideOpen"),r.next("div").slideToggle())})}if(t.text){var l=$('<div><span><span class="contentArea">'+t.text.replace(/</gi,"&lt;").replace(/>/gi,"&gt;")+"</span></span></div>"),d=$.trim(s.find("h4.t"+i).clone().find("strong").remove().end().text());if(0===d.indexOf("http:")){var c=$('<span class="linkArea sprite" title="'+LodLiveUtils.lang("executeThisQuery")+'"></span>');c.click(function(){window.open(d+"?query="+encodeURIComponent(t.text))}),c.hover(function(){c.setBackgroundPosition({x:-630})},function(){c.setBackgroundPosition({x:-610})}),l.children("span").prepend(c)}l.css({opacity:.95}),s.append(l)}t.error&&s.find("h4.t"+i+" > span").append('<strong style="float:right">'+LodLiveUtils.lang("enpointNotAvailable")+"</strong>"),"number"==typeof t.founded&&s.find("h4.t"+i+" > span").append(t.founded?'<strong style="float:right">'+t.founded+" "+LodLiveUtils.lang("propsFound")+" </strong>":'<strong style="float:right">'+LodLiveUtils.lang("propsNotFound")+"</strong>"),a[o]=s,globalInfoPanelMap=a}break;case"remove":delete a[o],n.infoPanelMap=a;break;case"show":n.context.append(s);break;case"close":s.detach()}},LodLive.prototype.updateMapPanel=function(e){var t,n=this;if(n.doDrawMap)if(t=n.context.find(".lodlive-maps-container"),t.length&&t.is(":visible")){t.gmap3({action:"clear"});var o=n.context.find(".lodlive-panel2-content");o.width(800);for(var i=e.find(".lodlive-close2"),a=n.mapsMap,s=Object.keys(a),r=s.length,l=r>1?{action:"autofit"}:{};r--;){var d=s[r];$("#mapPanel").gmap3({action:"addMarker",latLng:[a[d].lats,a[d].longs],title:unescape(a[d].title)},l)}i.css({position:"absolute",left:o.width()+1,top:0})}else n.highlight(e.children(".maps"),2,200,"-565px -450px")},LodLive.prototype.updateImagePanel=function(e){var t=this;if(t.doCollectImages){var n=e.find(".lodlive-images-container span:visible");if(n.length){var o=e.find(".lodlive-panel2-content"),i=e.find(".lodlive-close2"),a=t.imagesMap,s=Object.keys(a),r=s.length;if(r>0){n.children(".amsg").remove();for(var l=0;r--;)for(var d=s[r],c=0;c<a[d].length;c++)for(var p in a[d][c]){if(t.noImagesMap[d+l])l--;else if(!n.children(".img-"+d+"-"+l).length){var u=$('<a href="'+unescape(p)+'" class="sprite relatedImage img-'+d+"-"+l+'"><img rel="'+unescape(a[d][c][p])+'" src="'+unescape(p)+'"/></a>"');u.attr("data-prop",d),n.prepend(u),u.fancybox({transitionIn:"elastic",transitionOut:"elastic",speedIn:400,type:"image",speedOut:200,hideOnContentClick:!0,showCloseButton:!1,overlayShow:!1}),u.children("img").error(function(){if(u.remove(),l--,3>l)o.width(148);else{var e=(l/3+(l%3>0?1:0)+"").split(".")[0];e>7&&(e=7),o.width(20+128*e)}i.css({position:"absolute",left:o.width()+1,top:0}),t.noImagesMap[d+l]=!0}).load(function(){var n=$(this),a=n.attr("rel"),s=n.width(),r=n.height();r>s?(n.height(113*r/s),n.width(113)):n.css({width:113*s/r,height:113,marginLeft:-((113*s/r-113)/2)});var d=$('<span class="lodlive-image-controls"><span class="imgControlCenter" title="'+LodLiveUtils.lang("showResource")+'"></span><span class="imgControlZoom" title="'+LodLiveUtils.lang("zoomIn")+'"></span><span class="imgTitle">'+a+"</span></span>");if(u.append(d),u.hover(function(){n.hide()},function(){n.show()}),d.children(".imgControlZoom").hover(function(){u.setBackgroundPosition({x:-1955})},function(){u.setBackgroundPosition({x:-1825})}),d.children(".imgControlCenter").hover(function(){u.setBackgroundPosition({x:-2085})},function(){u.setBackgroundPosition({x:-1825})}),d.children(".imgControlCenter").click(function(){return e.find(".lodlive-close2").click(),t.highlight($("#"+u.attr("data-prop")).children(".box"),8,100,"0 0"),!1}),3>l)o.width(148);else{var c=(l/3+(l%3>0?1:0)+"").split(".")[0];c>7&&(c=7),o.width(20+128*c),i.css({position:"absolute",left:o.width()+1,top:0})}})}l++}}else o.width(148),n.children(".amsg").length||n.append('<span class="amsg">'+LodLiveUtils.lang("imagesNotFound")+"</span>");i.css({position:"absolute",left:o.width()+1,top:0})}else t.highlight(e.children(".images"),2,200,"-610px -450px")}},LodLive.prototype.highlight=function(e,t,n,o){var i=this;if(t>0){t--;var a=e.css("background-position");e.doTimeout(n,function(){e.css({"background-position":o}),e.doTimeout(n,function(){e.css({"background-position":a}),i.highlight(e,t,n,o)})})}},LodLive.prototype.renewDrag=function(e){var t,n=this;n.debugOn&&(start=(new Date).getTime()),e.each(function(){var e=$(this),o=e.attr("id");e.is(".ui-draggable")||e.draggable({stack:".boxWrapper",containment:"parent",start:function(){n.context.find(".lodlive-toolbox").remove(),$("#line-"+o).clearCanvas();var e=n.storeIds["rev"+o];if(e)for(var i=0;i<e.length;i++)t=n.storeIds["gen"+e[i]],$("#line-"+e[i]).clearCanvas()},drag:function(){},stop:function(){n.drawAllLines($(this))}})}),n.debugOn&&console.debug((new Date).getTime()-start+"  renewDrag ")},LodLive.prototype.centerBox=function(e){{var t,n=this,o=n.context.height(),i=n.context.width();e.width()||65,e.height()||65}n.debugOn&&(t=(new Date).getTime());var a=(o-65)/2+(n.context.scrollTop()||0),s=(i-65)/2+(n.context.scrollLeft()||0),r={position:"absolute",left:s,top:a};try{e.animate(r,1e3)}catch(l){e.css(r)}n.debugOn&&console.debug((new Date).getTime()-t+"  centerBox ")},LodLive.prototype.autoExpand=function(){var e,t=this;t.debugOn&&(e=(new Date).getTime()),$.each(t.innerPageMap,function(e,n){var o=n.children(".relatedBox:not([class*=exploded])");o.length&&(n.parent().length||t.context.append(n),o.each(function(){box=$(moreInfoOnThis);var e=box.attr("relmd5"),n=t.context.children("#"+e);n.length>0&&box.click()}),t.context.children(".innerPage").detach())}),t.context.find(".relatedBox:not([class*=exploded])").each(function(){var e=$(this),t=e.attr("relmd5"),n=context.children("#"+t);n.length>0&&e.click()}),t.debugOn&&console.debug((new Date).getTime()-e+"  autoExpand ")},LodLive.prototype.addNewDoc=function(e,t,n){var o,i=this;i.debugOn&&(o=(new Date).getTime());var a=t.attr("relmd5"),s=i.context.find("#"+a),r=t.is(".inverse"),l=!0;t=$(t),s.length||(s=$(i.boxTemplate),l=!1);var d=t.data("circleid"),c=$("#"+d);if(i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 01 "),!r){i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 02 ");var p=i.storeIds["gen"+d];if(p){if(-1!=$.inArray(a,p))return;p.push(a)}else p=[a];i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 03 "),i.storeIds["gen"+d]=p,p=i.storeIds["rev"+a],p?-1==$.inArray(d,p)&&p.push(d):p=[d],i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 04 "),i.storeIds["rev"+a]=p}var u=t.data("property"),v=t.attr("rel");s.attr("id",a),s.attr("rel",v);var f=r?'div[data-property="'+u+'"][rel="'+v+'"]':null;if(i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 05 "),t.hide(),l)r?i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 11 "):(i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 10 "),i.renewDrag(i.context.children(".boxWrapper")),i.drawaLine(e,s,u));else{i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 06 ");var h=parseInt(t.attr("data-circlePos"),10),g=parseInt(t.attr("data-circleParts"),10),m=i.circleChords(g>10?h%2>0?3*c.width():2*c.width():5*c.width()/2,g,c.position().left+e.width()/2,c.position().top+c.height()/2,null,h);i.context.append(s),s.css({left:m[0][0]-s.height()/2,top:m[0][1]-s.width()/2,opacity:1,zIndex:99}),i.renewDrag(i.context.children(".boxWrapper")),i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 07 "),r?(debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 09 "),i.openDoc(v,s,f)):(i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc 08 "),i.doInverse?i.openDoc(v,s,f):i.openDoc(v,s),i.drawaLine(e,s,u))}return n&&n(),i.debugOn&&console.debug((new Date).getTime()-o+"  addNewDoc "),!1},LodLive.prototype.removeDoc=function(e){var t=this;t.debugOn&&(start=(new Date).getTime()),t.context.find(".lodlive-toolbox").remove();var n=e.attr("id");t.queryConsole("remove",{uriId:e.attr("rel")}),t.context.find("#line-"+n).clearCanvas();var o=t.storeIds["rev"+n];if(o)for(var i=0;i<o.length;i++)t.context.find("#line-"+o[i]).clearCanvas();t.docInfo("","close");var a=t.context.find(".lodLiveControlPanel");if(t.doCollectImages){var s=t.imagesMap;s[n]&&(delete s[n],t.updateImagePanel(a),a.find("a[class*=img-"+n+"]").remove())}if(t.doDrawMap){var r=t.mapsMap;r[n]&&(delete r[n],t.updateMapPanel(a))}e.fadeOut("normal",null,function(){e.remove(),$.each(t.innerPageMap,function(e,o){if(o.children("."+n).length){var i=t.context.find("#"+e);i.append(o);var a=i.find(".lastClick").attr("rel");i.children(".innerPage").children("."+a).length||i.children(".innerPage").detach()}}),t.context.find("."+n).each(function(){var e=$(this);e.show(),e.removeClass("exploded")});var o,i,a,s=t.storeIds["gen"+n],r=t.storeIds["rev"+n];if(r)for(o=0;o<r.length;o++)if(a=t.storeIds["gen"+r[o]])for(i=0;i<a.length;i++)a[i]===n&&a.splice(i,1);if(s)for(o=0;o<s.length;o++)if(a=t.storeIds["rev"+s[o]])for(i=0;i<a.length;i++)a[i]==n&&a.splice(i,1);if(r=t.storeIds["rev"+n])for(o=0;o<r.length;o++)if(s=t.storeIds["gen"+r[o]])for(i=0;i<s.length;i++)t.drawaLine(t.context.find("#"+r[o]),t.context.find("#"+s[i]));delete t.storeIds["rev"+n],delete t.storeIds["gen"+n]}),t.debugOn&&console.debug((new Date).getTime()-start+"  removeDoc ")},LodLive.prototype.addClick=function(e,t){var n=this;n.debugOn&&(start=(new Date).getTime()),e.find(".relatedBox").each(function(){var t=$(this);t.attr("relmd5",n.hashFunc(t.attr("rel"))),t.click(function(o){t.addClass("exploded"),n.addNewDoc(e,t),o.stopPropagation()}),t.hover(function(){n.msg(t.data("title"),"show",null,null,t.is(".inverse"))},function(){n.msg(null,"hide")})}),e.find(".groupedRelatedBox").each(function(){var t=$(this);t.click(function(){t.data("show")?(t.data("show",!1),n.docInfo("","close"),t.removeClass("lastClick"),e.find("."+t.attr("rel")).fadeOut("fast"),t.fadeTo("fast",1),e.children(".innerPage").detach()):(t.data("show",!0),e.append(n.innerPageMap[e.attr("id")]),n.docInfo("","close"),e.find(".lastClick").removeClass("lastClick").click(),e.children(".innerPage").length||e.append(n.innerPageMap[e.attr("id")]),t.addClass("lastClick"),e.find("."+t.attr("rel")+":not([class*=exploded])").fadeIn("fast"),t.fadeTo("fast",.3))}),t.hover(function(){n.msg(t.attr("data-title"),"show",null,null,t.is(".inverse"))},function(){n.msg(null,"hide")})}),n.innerPageMap[e.attr("id")]=e.children(".innerPage"),e.children(".innerPage").detach(),e.find(".actionBox[rel=contents]").click(function(){n.docInfo(e,"open")}),e.find(".actionBox[rel=tools]").click(function(){if(n.context.find(".toolBox:visible").length)n.context.find(".toolBox").fadeOut("fast",null,function(){$(".toolBox").remove()});else{var t=e.position(),o=$('<div class="lodlive-toolbox sprite" style="display:none" ><div class="innerActionBox infoQ" rel="infoQ" title="'+LodLiveUtils.lang("moreInfoOnThis")+'" >&#160;</div><div class="innerActionBox center" rel="center" title="'+LodLiveUtils.lang("centerClose")+'" >&#160;</div><div class="innerActionBox newpage" rel="newpage" title="'+LodLiveUtils.lang("openOnline")+'" >&#160;</div><div class="innerActionBox expand" rel="expand" title="'+LodLiveUtils.lang("openRelated")+'" >&#160;</div><div class="innerActionBox remove" rel="remove" title="'+LodLiveUtils.lang("removeResource")+'" >&#160;</div></div>');n.context.append(o),o.css({top:t.top-23,left:t.left+10}),o.fadeIn("fast"),o.find(".innerActionBox[rel=expand]").each(function(){var t=$(this);t.click(function(){function t(){var e=a.eq(i++);e.length&&e.click(),s>i&&window.setTimeout(t,75)}o.remove(),n.docInfo("","close");var i=0,a=e.find(".relatedBox:visible"),s=a.length;window.setTimeout(t,75)}),t.hover(function(){o.setBackgroundPosition({y:-515})},function(){o.setBackgroundPosition({y:-395})})}),o.find(".innerActionBox[rel=infoQ]").each(function(){var t=$(this);t.click(function(){o.remove(),n.queryConsole("show",{uriId:e.attr("rel")})}),t.hover(function(){o.setBackgroundPosition({y:-425})},function(){o.setBackgroundPosition({y:-395})})}),o.find(".innerActionBox[rel=remove]").each(function(){var t=$(this);t.click(function(){n.removeDoc(e),o.remove(),n.docInfo("","close")}),t.hover(function(){o.setBackgroundPosition({y:-545})},function(){o.setBackgroundPosition({y:-395})})}),o.find(".innerActionBox[rel=newpage]").each(function(){var t=$(this);t.click(function(){o.remove(),n.docInfo("","close"),window.open(e.attr("rel"))}),t.hover(function(){t.parent().setBackgroundPosition({y:-485})},function(){t.parent().setBackgroundPosition({y:-395})})}),o.find(".innerActionBox[rel=center]").each(function(){var t=$(this);t.click(function(){var t=$(location).attr("href");-1!=t.indexOf("?http")&&(document.location=t.substring(0,t.indexOf("?"))+"?"+e.attr("rel"))}),t.hover(function(){o.setBackgroundPosition({y:-455})},function(){o.setBackgroundPosition({y:-395})})})}}),t&&t(),n.debugOn&&console.debug((new Date).getTime()-start+"  addClick ")},LodLive.prototype.parseRawResourceDoc=function(destBox,URI){var inst=this;inst.debugOn&&(start=(new Date).getTime());var uris=[],bnodes=[],values=[],def=inst.profile["default"];if(def){var res=LodLiveUtils.getSparqlConf("document",def,inst.profile).replace(/\{URI\}/gi,URI),url=def.endpoint+"?uri="+encodeURIComponent(URI)+"&query="+encodeURIComponent(res);inst.showInfoConsole&&inst.queryConsole("log",{title:LodLiveUtils.lang("endpointNotConfiguredSoInternal"),text:res,uriId:URI}),$.ajax({url:url,beforeSend:function(){inst.context.append(destBox),destBox.html('<img style="margin-left:'+destBox.width()/2+'px;margin-top:147px" src="img/ajax-loader-gray.gif"/>'),destBox.css({position:"fixed",right:20,top:0}),destBox.attr("data-top",destBox.position().top)},success:function(json){json=json.results&&json.results.bindings,$.each(json,function(key,value){eval("uri"===value.object.type?"uris.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})":"bnode"==value.object.type?"bnodes.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})":"values.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})")}),destBox.html(""),inst.debugOn&&(console.debug(URI+"   "),console.debug(values)),inst.formatDoc(destBox,values,uris,bnodes,URI)},error:function(){destBox.html(""),values=[{"http://system/msg":"risorsa non trovata: "+destBox.attr("rel")}],inst.formatDoc(destBox,values,uris,bnodes,URI)}})}inst.debugOn&&console.debug((new Date).getTime()-start+"  parseRawResourceDoc ")},LodLive.prototype.docInfo=function(obj,action){var inst=this,docInfo=inst.context.find(".lodlive-docinfo");switch(inst.debugOn&&(start=(new Date).getTime()),action){case"open":var URI=obj.attr("rel");if(docInfo.length&&(docInfo.fadeOut("fast",null,function(){docInfo.remove()}),$('.lodlive-docinfo[rel="info-'+URI+'"]').length>0))return;docInfo=$('<div class="lodlive-docinfo" rel="info-'+URI+'"></div>'),inst.context.append(docInfo);var SPARQLquery=inst.composeQuery(URI,"document"),uris=[],bnodes=[],values=[];0===SPARQLquery.indexOf("http://system/dummy")?inst.parseRawResourceDoc(docInfo,URI):$.ajax({url:SPARQLquery,beforeSend:function(){docInfo.html('<img style="margin-left:'+docInfo.width()/2+'px;margin-top:147px" src="img/ajax-loader-gray.gif"/>'),docInfo.css({position:"fixed",right:15,top:0}),docInfo.attr("data-top",docInfo.position().top)},success:function(json){json=json.results&&json.results.bindings,$.each(json,function(key,value){eval("uri"==value.object.type?"uris.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})":"bnode"==value.object.type?"bnodes.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})":"values.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})")}),docInfo.html(""),inst.formatDoc(docInfo,values,uris,bnodes,URI)},error:function(){destBox.html(""),values=[{"http://system/msg":"risorsa non trovata: "+destBox.attr("rel")}],inst.formatDoc(docInfo,values,uris,bnodes,URI)}});break;default:docInfo.fadeOut("fast",null,function(){docInfo.remove()})}inst.debugOn&&console.debug((new Date).getTime()-start+"  docInfo ")},LodLive.prototype.processDraw=function(e,t,n,o,i,a){var s,r=this,l=r.profile;r.debugOn&&(s=(new Date).getTime());var d="",c="standardLine";if(r.context.find("#"+a).length>0){d=i.attr("data-propertyName-"+a);var p=d.split("|");d="\n";for(var u=0;u<p.length;u++){l.arrows[$.trim(p[u])]&&(c=r.profile.arrows[$.trim(p[u])]+"Line");{var v=LodLive.shortenKey(p[u]);v.lastIndexOf("#"),v.lastIndexOf("/")}-1==d.indexOf("\n"+v+"\n")&&(d+=v+"\n")}}"isSameAsLine"!==c?r.standardLine(d,e,t,n,o,i,a):LodLiveUtils.customLines(r.context,c,d,e,t,n,o,i,a),r.debugOn&&console.debug((new Date).getTime()-s+"  processDraw ")},LodLive.prototype.drawAllLines=function(e){var t,n=this,o=e.attr("id"),i=n.storeIds["gen"+o],a=n.storeIds["rev"+o];if(n.context.find("#line-"+o).clearCanvas(),i)for(t=0;t<i.length;t++)n.drawaLine(e,n.context.find("#"+i[t]));if(a)for(t=0;t<a.length;t++)if(i=n.storeIds["gen"+a[t]],$("#line-"+a[t]).clearCanvas(),i)for(var s=0;s<i.length;s++)n.drawaLine(n.context.find("#"+a[t]),n.context.find("#"+i[s]))},LodLive.prototype.drawaLine=function(e,t,n){var o,i=this;i.debugOn&&(o=(new Date).getTime());var a=e.position(),s=t.position(),r=$("#line-"+e.attr("id"));1==r.length?(n&&r.attr("data-propertyName-"+t.attr("id"),n),i.processDraw(a.left+e.width()/2,a.top+e.height()/2,s.left+t.width()/2,s.top+t.height()/2,r,t.attr("id"))):(r=$("<canvas data-propertyName-"+t.attr("id")+'="'+n+'" height="'+i.context.height()+'" width="'+i.context.width()+'" id="line-'+e.attr("id")+'"></canvas>'),i.context.append(r),r.css({position:"absolute",zIndex:"0",top:0,left:0}),i.processDraw(a.left+e.width()/2,a.top+e.height()/2,s.left+t.width()/2,s.top+t.height()/2,r,t.attr("id"))),i.debugOn&&console.debug((new Date).getTime()-o+"  drawaLine ")},LodLive.prototype.formatDoc=function(e,t,n,o,i){var a=this;a.debugOn&&(console.debug("formatDoc 0"),start=(new Date).getTime());var s=a.getJsonValue(n,"http://www.w3.org/1999/02/22-rdf-syntax-ns#type","default");e.addClass(a.getProperty("document","className",s));var r=a.getProperty("images","properties",s),l=a.getProperty("weblinks","properties",s),d=a.getProperty("document","propertiesMapper",i.replace(/(http:\/\/[^\/]+\/).+/,"$1"));Array.isArray(r)||(r=[r]),Array.isArray(l)||(l=[l]);var c="<div></div>",p=$(c),u=[];$.each(t,function(e,t){for(var n in t){var o={};o[n]=t[n],u.push(o)}}),a.debugOn&&console.debug("formatDoc 1");var v=[],f=[],h=[];$.each(n,function(e,t){for(var n in t){var o={};o[n]=t[n],"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"!=n?-1!=$.inArray(n,r)?v.push(o):-1!=$.inArray(n,l)&&f.push(o):h.push(unescape(t[n]))}}),a.debugOn&&console.debug("formatDoc 2");var g=null;v.length>0&&(g=$('<div class="section" style="height:80px"></div>'),$.each(v,function(e,t){for(var n in t)g.append('<a class="relatedImage" href="'+unescape(t[n])+'"><img src="'+unescape(t[n])+'"/></a> ')})),a.debugOn&&console.debug("formatDoc 3");var m=null;f.length>0&&(m='<div class="section"><ul style="padding:0;margin:0;display:block;overflow:hidden;tex-overflow:ellipses">',$.each(f,function(e,t){for(var n in t)m+='<li><a class="relatedLink" target="_blank" data-title="'+n+" \n "+unescape(t[n])+'" href="'+unescape(t[n])+'">'+unescape(t[n])+"</a></li>"}),m+="</ul></div>"),a.debugOn&&console.debug("formatDoc 4");var y=$("<div></div>"),x=$('<div class="topSection sprite"><span>&#160;</span></div>');if(p.append(x),x.find("span").each(function(){var e=$(this);e.click(function(){a.docInfo("","close")}),e.hover(function(){x.setBackgroundPosition({y:-410})},function(){x.setBackgroundPosition({y:-390})})}),a.debugOn&&console.debug("formatDoc 5"),h.length>0){var b=$('<div class="section"><label data-title="http://www.w3.org/1999/02/22-rdf-syntax-ns#type">type</label><div></div></div>');b.find("label").each(function(){var e=$(this);e.hover(function(){a.msg(e.attr("data-title"),"show")},function(){a.msg(null,"hide")})});for(var L=0;L<h.length;L++){var w=LodLive.shortenKey(h[L]);b.children("div").append('<span title="'+h[L]+'">'+w+" </span>")}y.append(b),y.append('<div class="separ sprite"></div>')}if(a.debugOn&&console.debug("formatDoc 6"),g&&(y.append(g),y.append('<div class="separ sprite"></div>')),m){var k=$(m);k.find("a").each(function(){$(this).hover(function(){a.msg($(this).attr("data-title"),"show")},function(){a.msg(null,"hide")})}),y.append(k),y.append('<div class="separ sprite"></div>')}if(a.debugOn&&console.debug("formatDoc 7"),d?$.each(d,function(e,t){$.each(u,function(n,o){for(var i in o)if(e==i){var s=t;try{var r=$('<div class="section"><label data-title="'+i+'">'+s+"</label><div>"+unescape(o[i])+'</div></div><div class="separ sprite"></div>');r.find("label").each(function(){$(this).hover(function(){a.msg($(this).attr("data-title"),"show")},function(){a.msg(null,"hide")})}),y.append(r)}catch(l){}return!0}})}):$.each(u,function(e,t){for(var n in t){for(var o=n;o.indexOf("/")>-1;)o=o.substring(o.indexOf("/")+1);for(;o.indexOf("#")>-1;)o=o.substring(o.indexOf("#")+1);try{var i=$('<div class="section"><label data-title="'+n+'">'+o+"</label><div>"+unescape(t[n])+'</div></div><div class="separ sprite"></div>');i.find("label").each(function(){$(this).hover(function(){a.msg($(this).attr("data-title"),"show")},function(){a.msg(null,"hide")})}),y.append(i)}catch(s){}}}),o.length>0&&$.each(o,function(e,t){for(var n in t){var o=LodLive.shortenKey(n),s=$('<div class="section"><label data-title="'+n+'">'+o+'</label><span class="bnode"></span></div><div class="separ sprite"></div>');
-s.find("label").each(function(){$(this).hover(function(){a.msg($(this).attr("data-title"),"show")},function(){a.msg(null,"hide")})}),a.resolveBnodes(unescape(t[n]),i,s,y)}}),0==u.length&&0==o.length){var b=$('<div class="section"><label data-title="'+LodLiveUtils.lang("resourceMissingDoc")+'"></label><div>'+LodLiveUtils.lang("resourceMissingDoc")+'</div></div><div class="separ sprite"></div>');b.find("label").each(function(){$(this).hover(function(){a.msg($(this).attr("data-title"),"show")},function(){a.msg(null,"hide")})}),y.append(b)}e.append(p),e.append(y),y.find(".relatedImage").each(function(){$(this).fancybox({transitionIn:"elastic",transitionOut:"elastic",speedIn:400,type:"image",speedOut:200,hideOnContentClick:!0,showCloseButton:!1,overlayShow:!1}),$(this).find("img").each(function(){$(this).load(function(){$(this).width()>$(this).height()?($(this).height(80*$(this).height()/$(this).width()),$(this).width(80)):($(this).width(80*$(this).width()/$(this).height()),$(this).height(80))}),$(this).error(function(){$(this).attr("title",LodLiveUtils.lang("noImage")+" \n"+$(this).attr("src")),$(this).attr("src","img/immagine-vuota-"+$.jStorage.get("selectedLanguage")+".png")})})}),y.height()+40>$(window).height()?(e.find("div.separ:last").remove(),e.find("div.separLast").remove(),y.slimScroll({height:$(window).height()-40,color:"#fff"})):e.append('<div class="separLast"></div>'),a.debugOn&&console.debug((new Date).getTime()-start+"  formatDoc ")},LodLive.prototype.resolveBnodes=function(e,t,n,o){var i=this;i.debugOn&&(start=(new Date).getTime());var a=i.composeQuery(e,"bnode",t);return $.ajax({url:a,beforeSend:function(){n.find("span[class=bnode]").html('<img src="img/ajax-loader-black.gif"/>')},success:function(e){n.find("span[class=bnode]").html(""),e=e.results.bindings,$.each(e,function(e,a){var s=LodLive.shortenKey(a.property.value);if("uri"==a.object.type);else if("bnode"==a.object.type){var r=$('<span><label data-title="'+a.property.value+'"> / '+s+'</label><span class="bnode"></span></span>');r.find("label").each(function(){$(this).hover(function(){i.msg($(this).attr("data-title"),"show")},function(){i.msg(null,"hide")})}),n.find("span[class=bnode]").attr("class","").append(r),i.resolveBnodes(a.object.value,t,n,o)}else n.find("span[class=bnode]").append('<div><em title="'+a.property.value+'">'+s+"</em>: "+a.object.value+"</div>");o.append(n),o.height()+40>$(window).height()?(o.slimScroll({height:$(window).height()-40,color:"#fff"}),o.parent().find("div.separLast").remove()):o.parent().append('<div class="separLast"></div>')})},error:function(){n.find("span").html("")}}),i.debugOn&&console.debug((new Date).getTime()-start+"  resolveBnodes "),e},LodLive.prototype.circleChords=function(e,t,n,o,i,a){var s=this;s.debugOn&&(start=(new Date).getTime());var r=[],l=0;if(a){l=a;var d=2*Math.PI*(l/t);r.push([n+e*Math.cos(d),o+e*Math.sin(d)])}else for(;t>l;l++){var d=2*Math.PI*(l/t);r.push([n+e*Math.cos(d),o+e*Math.sin(d)])}return s.debugOn&&console.debug((new Date).getTime()-start+"  circleChords "),r},LodLive.prototype.getJsonValue=function(e,t,n){var o=this;o.debugOn&&(start=(new Date).getTime());var i=[];return $.each(e,function(e,n){for(var o in n)o==t&&i.push(unescape(n[o]))}),i==[]&&(i=[n]),o.debugOn&&console.debug((new Date).getTime()-start+"  getJsonValue"),i},LodLive.prototype.getProperty=function(e,t,n){var o=this,i=o.profile;if(o.debugOn&&(start=(new Date).getTime()),Array.isArray(n)){for(var a=0;a<n.length;a++)if(i[n[a]]&&i[n[a]][e])return t?i[n[a]][e][t]?i[n[a]][e][t]:i["default"][e][t]:i[n[a]][e]?i[n[a]][e]:i["default"][e]}else if(n+="",i[n]&&i[n][e])return t?i[n][e][t]?i[n][e][t]:i["default"][e][t]:i[n][e]?i[n][e]:i["default"][e];return o.debugOn&&console.debug((new Date).getTime()-start+"  getProperty"),i["default"][e]?t?i["default"][e][t]:i["default"][e]:""},LodLive.prototype.format=function(destBox,values,uris,inverses){var inst=this,classMap=inst.classMap,lodLiveProfile=inst.profile;inst.debugOn&&(start=(new Date).getTime());var containerBox=destBox.parent("div"),thisUri=containerBox.attr("rel")||"",docType=inst.getJsonValue(uris,"http://www.w3.org/1999/02/22-rdf-syntax-ns#type","default");-1!=thisUri.indexOf("~~")&&(docType="bnode");var aClass=inst.getProperty("document","className",docType);"bnode"==docType&&(aClass="bnode"),(null==aClass||"standard"==aClass||""==aClass)&&(classMap[docType]?aClass=classMap[docType]:(aClass="box"+classMap.counter,13===classMap.counter?classMap.counter=1:classMap.counter+=1,classMap[docType]=aClass)),containerBox.addClass(aClass);var titles=inst.getProperty("document","titleProperties",docType),images=inst.getProperty("images","properties",docType),weblinks=inst.getProperty("weblinks","properties",docType),lats=inst.getProperty("maps","lats",docType),longs=inst.getProperty("maps","longs",docType),points=inst.getProperty("maps","points",docType);"string"==typeof titles&&(titles=[titles]),"string"==typeof images&&(images=[images]),"string"==typeof weblinks&&(weblinks=[weblinks]),"string"==typeof lats&&(lats=[lats]),"string"==typeof longs&&(longs=[longs]),"string"==typeof points&&(points=[points]),titles.push("http://system/msg");for(var result='<div class="boxTitle"><span class="ellipsis_text">',a=0;a<titles.length;a++){var resultArray=inst.getJsonValue(values,titles[a],0==titles[a].indexOf("http")?"":titles[a]);if(0!=titles[a].indexOf("http"))-1==result.indexOf($.trim(unescape(titles[a]))+" \n")&&(result+=$.trim(unescape(titles[a]))+" \n");else for(var af=0;af<resultArray.length;af++)-1==result.indexOf(unescape(resultArray[af])+" \n")&&(result+=unescape(resultArray[af])+" \n")}var dataEndpoint=containerBox.attr("data-endpoint")||"";(0==values.length&&0==uris.length||0==dataEndpoint.indexOf("http://system/dummy"))&&(-1!=containerBox.attr("data-endpoint").indexOf("http://system/dummy")&&containerBox.attr("data-endpoint",LodLiveUtils.lang("endpointNotConfigured")),0==uris.length&&0==values.length&&(result='<div class="boxTitle" data-tooltip="'+LodLiveUtils.lang("resourceMissing")+'"><a target="_blank" href="'+thisUri+'"><span class="spriteLegenda"></span>'+thisUri+"</a>")),result+="</span></div>";var jResult=$(result);""==jResult.text()&&"bnode"==docType?jResult.text("[blank node]"):""==jResult.text()&&jResult.text(LodLiveUtils.lang("noName")),destBox.append(jResult);var resourceTitle=jResult.text();jResult.data("tooltip",resourceTitle),jResult.css({marginTop:13==jResult.height()?58:26==jResult.height()?51:45,height:jResult.height()+5}),destBox.hover(function(){var e=jResult.text();console.log("destbox hover title",e),inst.msg(e,"show","fullInfo",containerBox.attr("data-endpoint"))},function(){inst.msg(null,"hide")});var connectedDocs=[],invertedDocs=[],propertyGroup={},propertyGroupInverted={},connectedImages=[],connectedLongs=[],connectedLats=[],sameDocControl=[];if($.each(uris,function(key,value){for(var akey in value)if(lodLiveProfile.uriSubstitutor&&$.each(lodLiveProfile.uriSubstitutor,function(e,t){value[akey]=value[akey].replace(t.findStr,t.replaceStr)}),$.inArray(akey,images)>-1)eval("connectedImages.push({'"+value[akey]+"':'"+escape(resourceTitle)+"'})");else if(-1==$.inArray(akey,weblinks))if($.inArray(value[akey],sameDocControl)>-1){var aCounter=0;$.each(connectedDocs,function(key2,value2){for(var akey2 in value2)value2[akey2]==value[akey]&&eval("connectedDocs["+aCounter+"] = {'"+akey2+" | "+akey+"':'"+value[akey]+"'}");aCounter++})}else eval("connectedDocs.push({'"+akey+"':'"+value[akey]+"'})"),sameDocControl.push(value[akey])}),inverses&&(sameDocControl=[],$.each(inverses,function(key,value){for(var akey in value)if("bnode"!=docType||-1==value[akey].indexOf("~~"))if(lodLiveProfile.uriSubstitutor&&$.each(lodLiveProfile.uriSubstitutor,function(e,t){value[akey]=value[akey].replace(escape(t.findStr),escape(t.replaceStr))}),$.inArray(value[akey],sameDocControl)>-1){var aCounter=0;$.each(invertedDocs,function(key2,value2){for(var akey2 in value2)if(value2[akey2]==value[akey]){var theKey=akey2;return akey2!=akey&&(theKey=akey2+" | "+akey),eval("invertedDocs["+aCounter+"] = {'"+theKey+"':'"+value[akey]+"'}"),!1}aCounter++})}else eval("invertedDocs.push({'"+akey+"':'"+value[akey]+"'})"),sameDocControl.push(value[akey])})),inst.doDrawMap){for(var a=0;a<points.length;a++)for(var resultArray=inst.getJsonValue(values,points[a],points[a]),af=0;af<resultArray.length;af++)-1!=resultArray[af].indexOf(" ")?(eval("connectedLongs.push('"+unescape(resultArray[af].split(" ")[1])+"')"),eval("connectedLats.push('"+unescape(resultArray[af].split(" ")[0])+"')")):-1!=resultArray[af].indexOf("-")&&(eval("connectedLongs.push('"+unescape(resultArray[af].split("-")[1])+"')"),eval("connectedLats.push('"+unescape(resultArray[af].split("-")[0])+"')"));for(var a=0;a<longs.length;a++)for(var resultArray=inst.getJsonValue(values,longs[a],longs[a]),af=0;af<resultArray.length;af++)eval("connectedLongs.push('"+unescape(resultArray[af])+"')");for(var a=0;a<lats.length;a++)for(var resultArray=inst.getJsonValue(values,lats[a],lats[a]),af=0;af<resultArray.length;af++)eval("connectedLats.push('"+unescape(resultArray[af])+"')");if(connectedLongs.length>0&&connectedLats.length>0){var mapsMap=inst.mapsMap;mapsMap[containerBox.attr("id")]={longs:connectedLongs[0],lats:connectedLats[0],title:thisUri+"\n"+escape(resourceTitle)},inst.updateMapPanel(inst.context.find(".lodlive-controlPanel"))}}if(inst.doCollectImages&&connectedImages.length>0){var imagesMap=inst.imagesMap;imagesMap[containerBox.attr("id")]=connectedImages,inst.updateImagePanel(inst.context.find(".lodlive-controlPanel"))}var totRelated=connectedDocs.length+invertedDocs.length;if(totRelated>16){$.each(connectedDocs,function(e,t){for(var n in t)if(propertyGroup[n]){var o=propertyGroup[n];o.push(t[n]),propertyGroup[n]=o}else propertyGroup[n]=[t[n]]}),$.each(invertedDocs,function(e,t){for(var n in t)if(propertyGroupInverted[n]){var o=propertyGroupInverted[n];o.push(t[n]),propertyGroupInverted[n]=o}else propertyGroupInverted[n]=[t[n]]}),totRelated=0;for(var prop in propertyGroup)propertyGroup.hasOwnProperty(prop)&&totRelated++;for(var prop in propertyGroupInverted)propertyGroupInverted.hasOwnProperty(prop)&&totRelated++}var chordsList=inst.circleChords(75,24,destBox.position().left+65,destBox.position().top+65),chordsListGrouped=inst.circleChords(95,36,destBox.position().left+65,destBox.position().top+65),a=1,inserted={},counter=0,innerCounter=1,objectList=[],innerObjectList=[];$.each(connectedDocs,function(e,t){16==counter&&(counter=0),1==a||15==a&&(a=1);for(var n in t){var o=null;if(propertyGroup[n]&&propertyGroup[n].length>1){if(!inserted[n]){innerCounter=1,inserted[n]=!0;var i=$('<div class="groupedRelatedBox sprite" rel="'+MD5(n)+'"    data-title="'+n+" \n "+propertyGroup[n].length+" "+LodLiveUtils.lang("connectedResources")+'" ></div>'),s=n.split(" ");if(-1!=unescape(propertyGroup[n][0]).indexOf("~~"))i.addClass("isBnode");else for(var r=0;r<s.length;r++)lodLiveProfile.arrows[s[r]]&&i.addClass(lodLiveProfile.arrows[s[r]]);i.attr("style","top:"+(chordsList[a][1]-8)+"px;left:"+(chordsList[a][0]-8)+"px"),objectList.push(i),a++,counter++}25>innerCounter&&(o=$('<div class="aGrouped relatedBox sprite '+MD5(n)+" "+MD5(unescape(t[n]))+'" rel="'+unescape(t[n])+'"  data-title="'+n+" \n "+unescape(t[n])+'" ></div>'),o.attr("style","display:none;position:absolute;top:"+(chordsListGrouped[innerCounter][1]-8)+"px;left:"+(chordsListGrouped[innerCounter][0]-8)+"px"),o.attr("data-circlePos",innerCounter),o.attr("data-circleParts",36),o.attr("data-circleid",containerBox.attr("id"))),innerCounter++}else o=$('<div class="relatedBox sprite '+MD5(unescape(t[n]))+'" rel="'+unescape(t[n])+'"   data-title="'+n+" \n "+unescape(t[n])+'" ></div>'),o.attr("style","top:"+(chordsList[a][1]-8)+"px;left:"+(chordsList[a][0]-8)+"px"),o.attr("data-circlePos",a),o.attr("data-circleParts",24),a++,counter++;if(o){o.attr("data-circleid",containerBox.attr("id")),o.attr("data-property",n);var s=n.split(" ");if(-1!=o.attr("rel").indexOf("~~"))o.addClass("isBnode");else for(var r=0;r<s.length;r++)lodLiveProfile.arrows[s[r]]&&o.addClass(lodLiveProfile.arrows[s[r]]);o.hasClass("aGrouped")?innerObjectList.push(o):objectList.push(o)}}}),inserted={},$.each(invertedDocs,function(e,t){16==counter&&(counter=0),1==a||15==a&&(a=1);for(var n in t){var o=null;if(propertyGroupInverted[n]&&propertyGroupInverted[n].length>1){if(!inserted[n]){innerCounter=1,inserted[n]=!0;var i=$('<div class="groupedRelatedBox sprite inverse" rel="'+MD5(n)+'-i"   data-title="'+n+" \n "+propertyGroupInverted[n].length+" "+LodLiveUtils.lang("connectedResources")+'" ></div>'),s=n.split(" ");if(-1!=unescape(propertyGroupInverted[n][0]).indexOf("~~"))i.addClass("isBnode");else for(var r=0;r<s.length;r++)lodLiveProfile.arrows[s[r]]&&i.addClass(lodLiveProfile.arrows[s[r]]);i.attr("style","top:"+(chordsList[a][1]-8)+"px;left:"+(chordsList[a][0]-8)+"px"),objectList.push(i),a++,counter++}if(25>innerCounter){var l=unescape(0==t[n].indexOf("~~")?thisUri+t[n]:t[n]);o=$('<div class="aGrouped relatedBox sprite inverse '+MD5(n)+"-i "+MD5(unescape(t[n]))+' " rel="'+l+'"  data-title="'+n+" \n "+unescape(t[n])+'" ></div>'),o.attr("style","display:none;position:absolute;top:"+(chordsListGrouped[innerCounter][1]-8)+"px;left:"+(chordsListGrouped[innerCounter][0]-8)+"px"),o.attr("data-circlePos",innerCounter),o.attr("data-circleParts",36),o.attr("data-circleId",containerBox.attr("id"))}innerCounter++}else o=$('<div class="relatedBox sprite inverse '+MD5(unescape(t[n]))+'" rel="'+unescape(t[n])+'"   data-title="'+n+" \n "+unescape(t[n])+'" ></div>'),o.attr("style","top:"+(chordsList[a][1]-8)+"px;left:"+(chordsList[a][0]-8)+"px"),o.attr("data-circlePos",a),o.attr("data-circleParts",24),a++,counter++;if(o){o.attr("data-circleId",containerBox.attr("id")),o.attr("data-property",n);var s=n.split(" ");if(-1!=o.attr("rel").indexOf("~~"))o.addClass("isBnode");else for(var r=0;r<s.length;r++)lodLiveProfile.arrows[s[r]]&&o.addClass(lodLiveProfile.arrows[s[r]]);o.hasClass("aGrouped")?innerObjectList.push(o):objectList.push(o)}}});for(var page=0,totPages=objectList.length>14?objectList.length/14+(objectList.length%14>0?1:0):1,i=0;i<objectList.length;i++){if(i%14==0){page++;var aPage=$('<div class="page page'+page+'" style="display:none"></div>');page>1&&totPages>1&&aPage.append('<div class="pager pagePrev sprite" data-page="page'+(page-1)+'" style="top:'+(chordsList[0][1]-8)+"px;left:"+(chordsList[0][0]-8)+'px"></div>'),totPages>1&&totPages-1>page&&aPage.append('<div class="pager pageNext sprite" data-page="page'+(page+1)+'" style="top:'+(chordsList[15][1]-8)+"px;left:"+(chordsList[15][0]-8)+'px"></div>'),containerBox.append(aPage)}containerBox.children(".page"+page).append(objectList[i])}if(page=0,totPages=innerObjectList.length/24+(innerObjectList.length%24>0?1:0),innerObjectList.length>0){containerBox.append('<div class="innerPage"></div>');for(var i=0;i<innerObjectList.length;i++)containerBox.children(".innerPage").append(innerObjectList[i])}containerBox.children(".page1").fadeIn("fast"),containerBox.children(".page").children(".pager").click(function(){var e=$(this);containerBox.find(".lastClick").removeClass("lastClick").click(),e.parent().fadeOut("fast",null,function(){$(this).parent().children("."+e.attr("data-page")).fadeIn("fast")})});var obj=$('<div class="actionBox contents" rel="contents"  >&#160;</div>');containerBox.append(obj),obj.hover(function(){$(this).parent().children(".box").setBackgroundPosition({y:-260})},function(){$(this).parent().children(".box").setBackgroundPosition({y:0})}),obj=$('<div class="actionBox tools" rel="tools" >&#160;</div>'),containerBox.append(obj),obj.hover(function(){containerBox.children(".box").setBackgroundPosition({y:-130})},function(){containerBox.children(".box").setBackgroundPosition({y:0})}),inst.debugOn&&console.debug((new Date).getTime()-start+"	format ")},LodLive.prototype.openDoc=function(anUri,destBox,fromInverse){var inst=this;anUri||$.error("LodLive: no uri for openDoc"),inst.debugOn&&(start=(new Date).getTime());var uris=[],values=[];inst.showInfoConsole&&(inst.queryConsole("init",{uriId:anUri}),inst.queryConsole("log",{uriId:anUri,resource:anUri})),inst.debugOn&&console.log("composing query with anUri",anUri);var SPARQLquery=inst.composeQuery(anUri,"documentUri");if(inst.doStats&&methods.doStats(anUri),-1!=SPARQLquery.indexOf("endpoint=")){var endpoint=SPARQLquery.substring(SPARQLquery.indexOf("endpoint=")+9);endpoint=endpoint.substring(0,endpoint.indexOf("&")),destBox.attr("data-endpoint",endpoint)}else destBox.attr("data-endpoint",SPARQLquery.substring(0,SPARQLquery.indexOf("?")));0==SPARQLquery.indexOf("http://system/dummy")?inst.guessingEndpoint(anUri,function(){inst.openDoc(anUri,destBox,fromInverse)},function(){inst.parseRawResource(destBox,anUri,fromInverse)}):$.ajax({url:SPARQLquery,beforeSend:function(){destBox.children(".box").html('<img style="margin-top:'+(destBox.children(".box").height()/2-8)+'px" src="img/ajax-loader.gif"/>')},success:function(json){json=json.results&&json.results.bindings;var conta=0;if($.each(json,function(e,t){var n={},o={};conta++,"uri"===t.object.type||"bnode"===t.object.type?t.object.value==anUri||"bnode"===t.object.type&&inst.ignoreBnodes||(o[t.property.value]=escape("bnode"===t.object.type?anUri+"~~"+t.object.value:t.object.value),uris.push(o)):(n[t.property.value]=escape(t.object.value),values.push(n))}),inst.showInfoConsole&&inst.queryConsole("log",{founded:conta,id:SPARQLquery,uriId:anUri}),inst.debugOn&&console.debug((new Date).getTime()-start+"	openDoc eval uris & values"),destBox.children(".box").html(""),inst.doInverse){SPARQLquery=inst.composeQuery(anUri,"inverse");var inverses=[];$.ajax({url:SPARQLquery,beforeSend:function(){destBox.children(".box").html('<img style="margin-top:'+(destBox.children(".box").height()/2-5)+'px" src="img/ajax-loader.gif"/>')},success:function(json){json=json.results.bindings;var conta=0;$.each(json,function(key,value){conta++,eval("inverses.push({'"+value.property.value+"':'"+("bnode"==value.object.type?anUri+"~~":"")+escape(value.object.value)+"'})")}),inst.showInfoConsole&&inst.queryConsole("log",{founded:conta,id:SPARQLquery,uriId:anUri}),inst.debugOn&&console.debug((new Date).getTime()-start+"	openDoc inverse eval uris ");var callback=function(){destBox.children(".box").html(""),inst.format(destBox.children(".box"),values,uris,inverses),inst.addClick(destBox,fromInverse?function(){try{$(fromInverse).click()}catch(e){}}:null),inst.doAutoExpand&&inst.autoExpand(destBox)};if(inst.doAutoSameas){var counter=0,tot=Object.keys(lodLiveProfile).length;inst.findInverseSameAs(anUri,counter,inverses,callback,tot)}else callback()},error:function(){destBox.children(".box").html(""),inst.format(destBox.children(".box"),values,uris),inst.showInfoConsole&&inst.queryConsole("log",{error:"error",id:SPARQLquery,uriId:anUri}),inst.addClick(destBox,fromInverse?function(){try{$(fromInverse).click()}catch(e){}}:null),inst.doAutoExpand&&inst.autoExpand(destBox)}})}else inst.format(destBox.children(".box"),values,uris),inst.addClick(destBox,fromInverse?function(){try{$(fromInverse).click()}catch(e){}}:null),inst.doAutoExpand&&inst.autoExpand(destBox)},error:function(){inst.errorBox(destBox)}}),inst.debugOn&&console.debug((new Date).getTime()-start+"	openDoc")},LodLive.prototype.parseRawResource=function(destBox,resource,fromInverse){var inst=this,values=[],uris=[],lodLiveProfile=inst.profile;if(lodLiveProfile["default"]){var res=LodLiveUtils.getSparqlConf("documentUri",lodLiveProfile["default"],lodLiveProfile).replace(/\{URI\}/gi,resource),url=lodLiveProfile["default"].endpoint+"?uri="+encodeURIComponent(resource)+"&query="+encodeURIComponent(res);inst.showInfoConsole&&inst.queryConsole("log",{title:LodLiveUtils.lang("endpointNotConfiguredSoInternal"),text:res,uriId:resource}),$.ajax({url:url,beforeSend:function(){destBox.children(".box").html('<img style="margin-top:'+(destBox.children(".box").height()/2-8)+'px" src="img/ajax-loader.gif"/>')},success:function(json){json=json.results.bindings;var conta=0;$.each(json,function(key,value){conta++,"uri"==value.object.type?value.object.value!=resource&&eval("uris.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})"):eval("values.push({'"+value.property.value+"':'"+escape(value.object.value)+"'})")}),inst.debugOn&&console.debug((new Date).getTime()-start+"  openDoc eval uris & values");var inverses=[],callback=function(){destBox.children(".box").html(""),inst.format(destBox.children(".box"),values,uris,inverses),inst.addClick(destBox,fromInverse?function(){try{$(fromInverse).click()}catch(e){}}:null),inst.doAutoExpand&&inst.autoExpand(destBox)};if(inst.doAutoSameas){var counter=0,tot=Object.keys(lodLiveProfile.connection).length;inst.findInverseSameAs(resource,counter,inverses,callback,tot)}else callback()},error:function(e,j,k){destBox.children(".box").html("");var inverses=[];fromInverse&&eval("uris.push({'"+fromInverse.replace(/div\[data-property="([^"]*)"\].*/,"$1")+"':'"+fromInverse.replace(/.*\[rel="([^"]*)"\].*/,"$1")+"'})"),inst.format(destBox.children(".box"),values,uris,inverses),inst.addClick(destBox,fromInverse?function(){try{$(fromInverse).click()}catch(e){}}:null),inst.doAutoExpand&&inst.autoExpand(destBox)}})}else{destBox.children(".box").html("");var inverses=[];fromInverse&&eval("uris.push({'"+fromInverse.replace(/div\[data-property="([^"]*)"\].*/,"$1")+"':'"+fromInverse.replace(/.*\[rel="([^"]*)"\].*/,"$1")+"'})"),inst.format(destBox.children(".box"),values,uris,inverses),inst.addClick(destBox,fromInverse?function(){try{$(fromInverse).click()}catch(e){}}:null),inst.doAutoExpand&&inst.autoExpand(destBox)}},LodLive.prototype.errorBox=function(e){var t=this;e.children(".box").addClass("errorBox"),e.children(".box").html("");var n=$('<div class="boxTitle"><span>'+LodLiveUtils.lang("enpointNotAvailable")+"</span></div>");e.children(".box").append(n),n.css({marginTop:13==n.height()?58:26==n.height()?51:45});var o=$('<div class="actionBox tools">&#160;</div>');o.click(function(){t.removeDoc(e)}),e.append(o),e.children(".box").hover(function(){t.msg(LodLiveUtils.lang("enpointNotAvailableOrSLow"),"show","fullInfo",e.attr("data-endpoint"))},function(){t.msg(null,"hide")})},LodLive.prototype.allClasses=function(e,t,n,o){var i=this;i.debugOn&&(start=(new Date).getTime()),e=i.composeQuery(e,"allClasses");var a=[];$.ajax({url:e,beforeSend:function(){t.html('<img src="img/ajax-loader.gif"/>')},success:function(e){t.html(LodLiveUtils.lang("choose")),e=e.results&&e.results.bindings,$.each(e,function(t){var n=e[t].object.value;-1==n.indexOf("http://www.openlinksw.com/")&&(n=n.replace(/http:\/\//,""),a.push(n))});for(var i=0;i<a.length;i++)n.append(o.replace(/\{CONTENT\}/g,a[i]))},error:function(){n.append(o.replace(/\{CONTENT\}/g,"si Ã¨ verificato un errore"))}}),i.debugOn&&console.debug((new Date).getTime()-start+"  allClasses")},LodLive.prototype.findInverseSameAs=function(anUri,counter,inverse,callback,tot){var inst=this,lodLiveProfile=inst.profile;inst.debugOn&&(start=(new Date).getTime());var innerCounter=0;$.each(lodLiveProfile.connection,function(key,value){if(innerCounter===counter){var skip=!1,keySplit=key.split(",");if(value.useForInverseSameAs)for(var a=0;a<keySplit.length;a++)-1!=anUri.indexOf(keySplit[a])&&(skip=!0);else skip=!0;if(skip)return counter++,tot>counter?inst.findInverseSameAs(anUri,counter,inverse,callback,tot):callback(),!1;var SPARQLquery=value.endpoint+"?"+(value.endpointType?lodLiveProfile.endpoints[value.endpointType]:lodLiveProfile.endpoints.all)+"&query="+escape(LodLiveUtils.getSparqlConf("inverseSameAs",value,lodLiveProfile).replace(/\{URI\}/g,anUri));value.proxy&&(SPARQLquery=value.proxy+"?endpoint="+value.endpoint+"&"+(value.endpointType?lodLiveProfile.endpoints[value.endpointType]:lodLiveProfile.endpoints.all)+"&query="+escape(LodLiveUtils.getSparqlConf("inverseSameAs",value,lodLiveProfile).replace(/\{URI\}/g,anUri))),$.ajax({url:SPARQLquery,timeout:3e3,beforeSend:function(){inst.showInfoConsole&&inst.queryConsole("log",{title:value.endpoint,text:LodLiveUtils.getSparqlConf("inverseSameAs",value,lodLiveProfile).replace(/\{URI\}/g,anUri),id:SPARQLquery,uriId:anUri})},success:function(json){json=json.results.bindings;var conta=0;$.each(json,function(key,value){conta++,eval(value.property&&value.property.value?"inverse.splice(1,0,{'"+value.property.value+"':'"+escape(value.object.value)+"'})":"inverse.splice(1,0,{'http://www.w3.org/2002/07/owl#sameAs':'"+escape(value.object.value)+"'})")}),inst.showInfoConsole&&inst.queryConsole("log",{founded:conta,id:SPARQLquery,uriId:anUri}),counter++,tot>counter?inst.findInverseSameAs(anUri,counter,inverse,callback,tot):callback()},error:function(){inst.showInfoConsole&&inst.queryConsole("log",{error:"error",id:SPARQLquery,uriId:anUri}),counter++,tot>counter?inst.findInverseSameAs(anUri,counter,inverse,callback,tot):callback()}}),inst.debugOn&&console.debug((new Date).getTime()-start+"  findInverseSameAs "+value.endpoint)}innerCounter++}),inst.debugOn&&console.debug((new Date).getTime()-start+"  findInverseSameAs")},LodLive.prototype.findSubject=function(e,t,n,o,i){var a=this,s=a.profile;a.debugOn&&(start=(new Date).getTime()),$.each(s.connection,function(o,i){for(var a=o.split(","),r=0;r<a.length;r++)-1!=e.indexOf(a[r])&&(e=i.endpoint+"?"+(i.endpointType?s.endpoints[i.endpointType]:s.endpoints.all)+"&query="+escape(LodLiveUtils.getSparqlConf("findSubject",i,s).replace(/\{CLASS\}/g,t).replace(/\{VALUE\}/g,n)),i.proxy&&(e=i.proxy+"?endpoint="+i.endpoint+"&"+(i.endpointType?s.endpoints[i.endpointType]:s.endpoints.all)+"&query="+escape(LodLiveUtils.getSparqlConf("findSubject",i,s).replace(/\{CLASS\}/g,t).replace(/\{VALUE\}/g,n))))});var r=[];$.ajax({url:e,beforeSend:function(){o.html('<img src="img/ajax-loader.gif"/>')},success:function(e){o.html(""),e=e.results&&e.results.bindings,$.each(e,function(t){r.push(e[t].subject.value)});for(var t=0;t<r.length;t++)i.val(r[t])},error:function(e){o.html("errore: "+e)}}),a.debugOn&&console.debug((new Date).getTime()-start+"  findSubject")},LodLive.prototype.standardLine=function(e,t,n,o,i,a){var s=180*Math.atan2(i-n,o-t)/Math.PI+180,r=t-Math.sqrt((o-t)*(o-t)+(i-n)*(i-n))+60;a.rotateCanvas({rotate:s,x:t,y:n}).drawLine({strokeStyle:"#fff",strokeWidth:1,strokeCap:"bevel",x1:t-60,y1:n,x2:r,y2:n}),s>90&&270>s&&a.rotateCanvas({rotate:180,x:(r+t)/2,y:(n+n)/2}),e=$.trim(e).replace(/\n/g,", "),a.drawText({fillStyle:"#606060",strokeStyle:"#606060",x:(r+t+(t+60>o?-60:60))/2,y:(n+n-(t+60>o?18:-18))/2,text:e,align:"center",strokeWidth:.01,fontSize:11,fontFamily:"'Open Sans',Verdana"}).restoreCanvas().restoreCanvas(),s=Math.atan2(i-n,o-t);var l=.79,d=Math.abs(8/Math.cos(l)),c=o-60*Math.cos(s),p=i-60*Math.sin(s),u=s+Math.PI+l,v=o+Math.cos(u)*d-60*Math.cos(s),f=i+Math.sin(u)*d-60*Math.sin(s),h=s+Math.PI-l,g=o+Math.cos(h)*d-60*Math.cos(s),m=i+Math.sin(h)*d-60*Math.sin(s);a.drawLine({strokeStyle:"#fff",strokeWidth:1,x1:c,y1:p,x2:g,y2:m}),a.drawLine({strokeStyle:"#fff",strokeWidth:1,x1:c,y1:p,x2:v,y2:f})},window.LodLive||(window.LodLive=LodLive),jQuery.fn.lodlive=function(e){return arguments.length?("string"==typeof e&&(e={method:e}),this.each(function(){var t=$(this),n=t.data("lodlive-instance");e.method&&"init"!==e.method.toLowerCase()?LodLive.prototype.hasOwnProperty(method)&&t.data("lodlive-instance")?n[method].apply(n,method.args||[]):jQuery.error("Method "+method+" does not exist on jQuery.lodlive"):(n=new LodLive(e.profile),t.data("lodlive-instance",n),n.init(t,e))})):this.data("lodlive-instance")}}(jQuery),function(){var e={},t={};e.getSparqlConf=function(e,t,n){return t.sparql&&t.sparql[e]?t.sparql[e]:n["default"].sparql[e]},e.registerTranslation=function(e,n){t[e]=n},e.setDefaultTranslation=function(e){t["default"]=t[e]||t["default"]},e.lang=function(e,n){var o=n?t[n]||t["default"]:t["default"];return o&&o[e]||e},e.isSameAsLine=function(e,t,n,o,i,a){var s=180*Math.atan2(i-n,o-t)/Math.PI+180,r=t-Math.sqrt((o-t)*(o-t)+(i-n)*(i-n))+60;a.rotateCanvas({rotate:s,x:t,y:n}).drawLine({strokeStyle:"#000",strokeWidth:1,strokeCap:"bevel",x1:t-60,y1:n,x2:r,y2:n}),s>90&&270>s&&a.rotateCanvas({rotate:180,x:(r+t)/2,y:(n+n)/2}),e=$.trim(e).replace(/\n/g,", "),a.drawText({fillStyle:"#000",strokeStyle:"#000",x:(r+t+(t+60>o?-60:60))/2,y:(n+n-(t+60>o?18:-18))/2,text:(t+60>o?" « ":"")+e+(t+60>o?"":" » "),align:"center",strokeWidth:.01,fontSize:11,fontFamily:"'Open Sans',Verdana"}).restoreCanvas().restoreCanvas(),s=Math.atan2(i-n,o-t);var l=.79,d=Math.abs(8/Math.cos(l)),c=o-60*Math.cos(s),p=i-60*Math.sin(s),u=s+Math.PI+l,v=o+Math.cos(u)*d-60*Math.cos(s),f=i+Math.sin(u)*d-60*Math.sin(s),h=s+Math.PI-l,g=o+Math.cos(h)*d-60*Math.cos(s),m=i+Math.sin(h)*d-60*Math.sin(s);a.drawLine({strokeStyle:"#000",strokeWidth:1,x1:c,y1:p,x2:g,y2:m}),a.drawLine({strokeStyle:"#000",strokeWidth:1,x1:c,y1:p,x2:v,y2:f})},e.customLines=function(t,n){return console.log("customLines",n),e[n]?e[n].apply(this,Array.prototype.slice.call(arguments,2)):void 0},window.LodLiveUtils||(window.LodLiveUtils=e)}(),$.fn.setBackgroundPosition=function(e){var t=$.trim(this.css("background-position")),n=-1==t.indexOf("left")?!1:!0;t=t.replace(/top/gi,"").replace(/left/gi,""),t=$.trim(t.replace(/  /g," "));try{var o=t.split(" ");(e.x||0==e.x)&&(o[0]=e.x+"px"),(e.y||0==e.y)&&(o[1]=e.y+"px"),t=n?"left "+o[0]+" top "+o[1]:o[0]+" "+o[1]}catch(i){alert(i)}return this.css({"background-position":t}),this};var MD5=function(e){function t(e,t){return e<<t|e>>>32-t}function n(e,t){var n,o,i,a,s;return i=2147483648&e,a=2147483648&t,n=1073741824&e,o=1073741824&t,s=(1073741823&e)+(1073741823&t),n&o?2147483648^s^i^a:n|o?1073741824&s?3221225472^s^i^a:1073741824^s^i^a:s^i^a}function o(e,t,n){return e&t|~e&n}function i(e,t,n){return e&n|t&~n}function a(e,t,n){return e^t^n}function s(e,t,n){return t^(e|~n)}function r(e,i,a,s,r,l,d){return e=n(e,n(n(o(i,a,s),r),d)),n(t(e,l),i)}function l(e,o,a,s,r,l,d){return e=n(e,n(n(i(o,a,s),r),d)),n(t(e,l),o)}function d(e,o,i,s,r,l,d){return e=n(e,n(n(a(o,i,s),r),d)),n(t(e,l),o)}function c(e,o,i,a,r,l,d){return e=n(e,n(n(s(o,i,a),r),d)),n(t(e,l),o)}function p(e){for(var t,n=e.length,o=n+8,i=(o-o%64)/64,a=16*(i+1),s=Array(a-1),r=0,l=0;n>l;)t=(l-l%4)/4,r=l%4*8,s[t]=s[t]|e.charCodeAt(l)<<r,l++;return t=(l-l%4)/4,r=l%4*8,s[t]=s[t]|128<<r,s[a-2]=n<<3,s[a-1]=n>>>29,s}function u(e){var t,n,o="",i="";for(n=0;3>=n;n++)t=e>>>8*n&255,i="0"+t.toString(16),o+=i.substr(i.length-2,2);return o}function v(e){e=e.replace(/\r\n/g,"\n");for(var t="",n=0;n<e.length;n++){var o=e.charCodeAt(n);128>o?t+=String.fromCharCode(o):o>127&&2048>o?(t+=String.fromCharCode(o>>6|192),t+=String.fromCharCode(63&o|128)):(t+=String.fromCharCode(o>>12|224),t+=String.fromCharCode(o>>6&63|128),t+=String.fromCharCode(63&o|128))}return t}if(!e)return"";e=e.replace(/http:\/\/.+~~/g,""),e=e.replace(/nodeID:\/\/.+~~/g,""),e=e.replace(/_:\/\/.+~~/g,"");var f,h,g,m,y,x,b,L,w,k=Array(),I=7,C=12,$=17,P=22,B=5,D=9,O=14,j=20,T=4,S=11,U=16,A=23,M=6,R=10,q=15,Q=21;for(e=v(e),k=p(e),x=1732584193,b=4023233417,L=2562383102,w=271733878,f=0;f<k.length;f+=16)h=x,g=b,m=L,y=w,x=r(x,b,L,w,k[f+0],I,3614090360),w=r(w,x,b,L,k[f+1],C,3905402710),L=r(L,w,x,b,k[f+2],$,606105819),b=r(b,L,w,x,k[f+3],P,3250441966),x=r(x,b,L,w,k[f+4],I,4118548399),w=r(w,x,b,L,k[f+5],C,1200080426),L=r(L,w,x,b,k[f+6],$,2821735955),b=r(b,L,w,x,k[f+7],P,4249261313),x=r(x,b,L,w,k[f+8],I,1770035416),w=r(w,x,b,L,k[f+9],C,2336552879),L=r(L,w,x,b,k[f+10],$,4294925233),b=r(b,L,w,x,k[f+11],P,2304563134),x=r(x,b,L,w,k[f+12],I,1804603682),w=r(w,x,b,L,k[f+13],C,4254626195),L=r(L,w,x,b,k[f+14],$,2792965006),b=r(b,L,w,x,k[f+15],P,1236535329),x=l(x,b,L,w,k[f+1],B,4129170786),w=l(w,x,b,L,k[f+6],D,3225465664),L=l(L,w,x,b,k[f+11],O,643717713),b=l(b,L,w,x,k[f+0],j,3921069994),x=l(x,b,L,w,k[f+5],B,3593408605),w=l(w,x,b,L,k[f+10],D,38016083),L=l(L,w,x,b,k[f+15],O,3634488961),b=l(b,L,w,x,k[f+4],j,3889429448),x=l(x,b,L,w,k[f+9],B,568446438),w=l(w,x,b,L,k[f+14],D,3275163606),L=l(L,w,x,b,k[f+3],O,4107603335),b=l(b,L,w,x,k[f+8],j,1163531501),x=l(x,b,L,w,k[f+13],B,2850285829),w=l(w,x,b,L,k[f+2],D,4243563512),L=l(L,w,x,b,k[f+7],O,1735328473),b=l(b,L,w,x,k[f+12],j,2368359562),x=d(x,b,L,w,k[f+5],T,4294588738),w=d(w,x,b,L,k[f+8],S,2272392833),L=d(L,w,x,b,k[f+11],U,1839030562),b=d(b,L,w,x,k[f+14],A,4259657740),x=d(x,b,L,w,k[f+1],T,2763975236),w=d(w,x,b,L,k[f+4],S,1272893353),L=d(L,w,x,b,k[f+7],U,4139469664),b=d(b,L,w,x,k[f+10],A,3200236656),x=d(x,b,L,w,k[f+13],T,681279174),w=d(w,x,b,L,k[f+0],S,3936430074),L=d(L,w,x,b,k[f+3],U,3572445317),b=d(b,L,w,x,k[f+6],A,76029189),x=d(x,b,L,w,k[f+9],T,3654602809),w=d(w,x,b,L,k[f+12],S,3873151461),L=d(L,w,x,b,k[f+15],U,530742520),b=d(b,L,w,x,k[f+2],A,3299628645),x=c(x,b,L,w,k[f+0],M,4096336452),w=c(w,x,b,L,k[f+7],R,1126891415),L=c(L,w,x,b,k[f+14],q,2878612391),b=c(b,L,w,x,k[f+5],Q,4237533241),x=c(x,b,L,w,k[f+12],M,1700485571),w=c(w,x,b,L,k[f+3],R,2399980690),L=c(L,w,x,b,k[f+10],q,4293915773),b=c(b,L,w,x,k[f+1],Q,2240044497),x=c(x,b,L,w,k[f+8],M,1873313359),w=c(w,x,b,L,k[f+15],R,4264355552),L=c(L,w,x,b,k[f+6],q,2734768916),b=c(b,L,w,x,k[f+13],Q,1309151649),x=c(x,b,L,w,k[f+4],M,4149444226),w=c(w,x,b,L,k[f+11],R,3174756917),L=c(L,w,x,b,k[f+2],q,718787259),b=c(b,L,w,x,k[f+9],Q,3951481745),x=n(x,h),b=n(b,g),L=n(L,m),w=n(w,y);
-var E=u(x)+u(b)+u(L)+u(w);return E.toLowerCase()};
+'use strict';
+/*
+ *
+ * lodLive 1.0
+ * is developed by Diego Valerio Camarda, Silvia Mazzini and Alessandro Antonuccio
+ *
+ * Licensed under the MIT license
+ *
+ * plase tell us if you use it!
+ *
+ * geodimail@gmail.com
+ *
+ *  Heavily refactored by matt@mattpileggi.com to eliminate third-party dependencies and support multiple LodLive instances
+ *
+ */
+
+(function($) {
+
+  var jwin = $(window), jbody = $(document.body);
+
+  $.ajaxSetup({
+      contentType: 'application/json',
+      dataType: 'jsonp'
+  });
+
+  // simple MD5 implementation to eliminate dependencies, can still pass in MD5 (or some other algorithm) as options.hashFunc if desired
+  function hashFunc(str) {
+    if (!str) { return str; }
+    for(var r=0, i=0; i<str.length; i++) {
+      r = (r<<5) - r+str.charCodeAt(i);
+      r &= r;
+    }
+    return r;
+  }
+
+  var DEFAULT_BOX_TEMPLATE = '<div class="boxWrapper lodlive-node defaultBoxTemplate" id="first"><div class="lodlive-node-label box sprite"></div></div>';
+
+  /** LodLiveProfile constructor - Not sure this is even necessary, a basic object should suffice - I don't think it adds any features or logic
+    * @Class LodLiveProfile
+    */
+  function LodLiveProfile() {
+
+  }
+
+  //utility functions - might belong somewhere else but here for now so I can see them
+  LodLive.shortenKey = function(str) {
+    str = jQuery.trim(str);
+    var lastSlash = str.lastIndexOf('/'), lastHash = str.lastIndexOf('#');
+    return lastSlash > lastHash ? str.substring(lastSlash + 1) : str.substring(lastHash + 1);
+  };
+
+  // instance methods
+
+  /**
+    * Initializes a new LodLive instance based on the given context (dom element) and possible options
+    *
+    * @param {Element|string} container jQuery element or string, if a string jQuery will use it as a selector to find the element
+    * @param {object=} options optional hash of options
+    */
+  function LodLive(container,options) {
+    this.container = container;
+    this.options = options;
+    this.UI = options.UI || {};
+    this.debugOn = options.debugOn && window.console; // don't debug if there is no console
+
+    // container elements
+    this.container = container.css('position', 'relative');
+    this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
+    if (typeof container === 'string') {
+      container = jQuery(container);
+    }
+    if (!container.length) {
+      throw 'LodLive: no container found';
+    }
+
+  }
+
+  LodLive.prototype.init = function(firstUri) {
+    var instance = this;
+
+    // instance data
+    this.imagesMap = {};
+    this.mapsMap = {};
+    this.infoPanelMap = {};
+    this.connection = {};
+    this.hashFunc = this.options.hashFunc || hashFunc;
+    this.innerPageMap = {};
+    this.storeIds = {};
+    this.boxTemplate =  this.options.boxTemplate || DEFAULT_BOX_TEMPLATE;
+    this.ignoreBnodes = this.UI.ignoreBnodes;
+
+    // TODO: look these up on the context object as data-lodlive-xxxx attributes
+    // store settings on the instance
+    /* TODO: set these by default on the instance via the options - consider putting them under 'flags' or some other property
+    $.jStorage.set('relationsLimit', 25);
+    $.jStorage.set('doStats', $.jStorage.get('doStats', true));
+    $.jStorage.set('doInverse', $.jStorage.get('doAutoExpand', true));
+    $.jStorage.set('doAutoExpand', $.jStorage.get('doAutoExpand', true));
+    $.jStorage.set('doAutoSameas', $.jStorage.get('doAutoSameas', true));
+    $.jStorage.set('doCollectImages', $.jStorage.get('doCollectImages', true));
+    $.jStorage.set('doDrawMap', $.jStorage.get('doDrawMap', true));
+    $.jStorage.set('showInfoConsole', $.jStorage.get('showInfoConsole', true));
+    */
+
+    var firstBox = $(this.boxTemplate);
+    this.centerBox(firstBox);
+    firstBox.attr('id', this.hashFunc(firstUri));
+    firstBox.attr('rel', firstUri);
+    firstBox.css('zIndex',1);
+    this.context.append(firstBox);
+
+    this.classMap = {
+      // TODO: let CSS drive color
+      counter : Math.floor(Math.random() * 13) + 1
+    };
+
+    // attivo le funzioni per il drag
+    this.renewDrag(this.context.children('.boxWrapper'));
+
+    // carico il primo documento
+    this.openDoc(firstUri, firstBox);
+
+    this.controlPanel('init');
+    this.msg('', 'init');
+
+  };
+
+  LodLive.prototype.controlPanel = function(action) {
+    var inst = this, panel = inst.controlPanelDiv;
+    if (this.debugOn) {
+      start = new Date().getTime();
+    }
+    // pannello di controllo dell'applicazione
+    
+    if (action == 'init') {
+
+      panel = $('<div class="lodLiveControlPanel"></div>');
+      inst.controlPanelDiv = panel;
+      //FIXME: remove inline css where possible
+      panel.css({
+        left : 0,
+        top : 10,
+        position : 'fixed',
+        zIndex : 999
+      });
+      panel.append('<div class="lodlive-panel lodlive-panel-options sprite" ></div>');
+      panel.append('<div class="lodlive-panel lodlive-panel-legend sprite" ></div>');
+      panel.append('<div class="lodlive-panel lodlive-panel-help sprite" ></div>');
+      panel.append('<div class="lodlive-panel lodlive-panel-main" ></div>');
+      panel.append('<div class="lodlive-panel2 lodlive-panel-maps sprite" ></div>');
+      panel.append('<div class="lodlive-panel2 lodlive-panel-images sprite" ></div>');
+
+      panel.children('.lodlive-panel-main,.lodlive-panel-panel2').hover(function() {
+        $(this).setBackgroundPosition({
+          y : -450
+        });
+      }, function() {
+        $(this).setBackgroundPosition({
+          y : -400
+        });
+      });
+
+      this.context.append(panel);
+
+      panel.attr('data-top', panel.position().top);
+
+      panel.children('.lodlive-panel').click(function() {
+
+        var panelChild = $(this);
+        panel.children('.lodlive-panel,.lodlive-panel2').hide();
+        var close = $('<div class="lodlive-panel lodlive-panel-close sprite" ></div>');
+        close.click(function() {
+          close.remove();
+          panel.children('#panelContent').remove();
+          panel.removeClass('justX');
+          panel.children('.lodlive-panel,.lodlive-panel2').show();
+          panel.children('.inactive').hide();
+        });
+        close.hover(function() {
+          $(this).setBackgroundPosition({
+            y : -550
+          });
+        }, function() {
+          $(this).setBackgroundPosition({
+            y : -500
+          });
+        });
+        panel.append(close);
+        //FIXME: remove inline CSS where possible
+        close.css({
+          position : 'absolute',
+          left : 241,
+          top : 0
+        });
+        var panelContent = $('<div class="lodlive-panel lodlive-panel-content"></div>');
+
+        panel.append(panelContent);
+
+        if (panelChild.is('.lodlive-panel-options')) {
+
+          var anUl = $('<ul class="lodlive-panel-options-list"></ul>');
+          panelContent.append('<div></div>');
+          panelContent.children('div').append('<h2>' + LodLiveUtils.lang('options') + '</h2>').append(anUl);
+          anUl.append('<li ' + ( inst.doInverse ? 'class="checked"' : 'class="check"') + ' data-value="inverse" ><span class="spriteLegenda"></span>' + LodLiveUtils.lang('generateInverse') + '</li>');
+          anUl.append('<li ' + ( inst.doAutoExpand ? 'class="checked"' : 'class="check"') + ' data-value="autoExpand" ><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoExpand') + '</li>');
+          anUl.append('<li ' + ( inst.doAutoSameas ? 'class="checked"' : 'class="check"') + ' data-value="autoSameas"><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoSameAs') + '</li>');
+
+          anUl.append('<li ' + ( inst.doCollectImages ? 'class="checked"' : 'class="check"') + ' data-value="autoCollectImages"><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoCollectImages') + '</li>');
+          anUl.append('<li ' + ( inst.doDrawMap ? 'class="checked"' : 'class="check"') + ' data-value="autoDrawMap"><span class="spriteLegenda"></span>' + LodLiveUtils.lang('autoDrawMap') + '</li>');
+
+          anUl.append('<li>&#160;</li>');
+          anUl.append('<li class="reload"><span  class="spriteLegenda"></span>' + LodLiveUtils.lang('restart') + '</li>');
+          anUl.children('.reload').click(function() {
+            context.lodlive('close');
+          });
+          anUl.children('li[data-value]').click(function() {
+
+            var child = $(this), childVal = child.data('value'), checked = child.is('.check, :checked');
+
+            if (child.is('.check')) {
+
+              switch(childVal) {
+                case 'inverse': inst.doInverse = checked; break;
+                case 'autoExpand': inst.doInverse = checked; break;
+                case 'autoSameas': inst.doAutoSameas = checked; break;
+                case 'autoCollectImages': 
+                  inst.doCollectImages = checked; 
+                  panel.children('div.lodlive-panel-images').toggleClass('inactive');
+                  break;
+                case 'autoDrawMap':
+                  inst.doDrawMap = checked;
+                  panel.children('div.lodlive-panel-maps').toggleClass('inactive');
+                  break;
+              }
+              child.toggleClass('checked');
+
+            } else if (child.is('.help')) {
+
+              var help = panel.find('.lodlive-panel-help').children('div').clone();
+
+              // FIXME: eliminate fancybox dependency
+              $('.videoHelp', help).fancybox({
+                'transitionIn' : 'elastic',
+                'transitionOut' : 'elastic',
+                'speedIn' : 400,
+                'type' : 'iframe',
+                'width' : 853,
+                'height' : 480,
+                'speedOut' : 200,
+                'hideOnContentClick' : false,
+                'showCloseButton' : true,
+                'overlayShow' : false
+              });
+
+              panelContent.append(help);
+
+              if (help.height() > jwin.height() + 10) {
+                panel.addClass('justX');
+              }
+
+            } else if (child.is('.legend')) {
+
+              
+              var legend = panel.find('.legenda').children('div').clone();
+
+              var counter = 0;
+
+              legend.find('span.spriteLegenda').each(function() {
+                $(this).css({
+                  'background-position' : '-1px -' + (counter * 20) + 'px'
+                });
+                counter++;
+              });
+
+              panelContent.append(legend);
+
+              if (legend.height() > jwin.height() + 10) {
+                panel.addClass('justX');
+              }
+
+            }
+
+          });
+        }
+
+        if (!inst.doCollectImages) {
+
+          panel.children('div.lodlive-panel-images').addClass('inactive').hide();
+
+        }
+        if (!inst.doDrawMap) {
+
+          panel.children('div.lodlive-panel-maps').addClass('inactive').hide();
+
+        }
+
+        //TODO: can we consolidate behavior between panels?
+        panel.on('click', '.lodlive-panel2', function() {
+          var panel2 = $(this);
+
+          panel.children('.lodlive-panel,.lodlive-panel2').hide();
+
+          var close = $('<div class="lodlive-panel lodlive-close2 sprite" ></div>');
+
+          close.click(function() {
+
+            $(this).remove();
+            panel.find('.lodlive-maps-container, .lodlive-images-container, .inactive').hide();
+            panelContent.hide();
+            panel.removeClass('justX');
+            panel.children('.lodlive-panel,.lodlive-panel2').show();
+
+          });
+
+          //FIXME: remove inline CSS where possible
+          close.hover(function() {
+
+            $(this).setBackgroundPosition({
+              y : -550
+            });
+
+          }, function() {
+
+            $(this).setBackgroundPosition({
+              y : -500
+            });
+
+          });
+          //TODO: why do we append this each click on .panel2, can we just hide/show it?
+          panel.append(close);
+
+          var panel2Content = panel.find('.lodlive-panel2-content');
+
+          if (!panel2Content.length) {
+            panel2Content = $('<div class="lodlive-panel2-content"></div>');
+            panel.append(panel2Content);
+          } else {
+            panel2Content.show();
+          }
+
+          if (panel2.is('.maps')) {
+
+            var mapPanel = panel2Content.find('.lodlive-maps-container');
+
+            if (!mapPanel.length) {
+              mapPanel = $('<div class="lodlive-maps-container"></div>');
+
+              panel2Content.width(800); //FIXME: magic number
+
+              panel2Content.append(mapPanel);
+
+              //FIXME: can we eliminate gmap3 dependency? maybe take it as an option
+              mapPanel.gmap3({
+                action : 'init',
+                options : {
+                  zoom : 2,
+                  mapTypeId : google.maps.MapTypeId.HYBRID
+                }
+              });
+
+            } else {
+              mapPanel.show();
+            }
+
+            inst.updateMapPanel(panel);
+
+          } else if (panelChild.is('.images')) {
+
+            var imagePanel = panel2Contet.find('.lodlive-images-container');
+
+            if (!imagePanel.length) {
+
+              imagePanel = $('<div class="lodlive-images-container"><span class="lodlive-images-count"></span></div>');
+              panel2Content.append(imagePanel);
+
+            } else {
+              imagePanel.show();
+            }
+            inst.updateImagePanel(panel);
+          }
+        });
+      });
+
+    } else if (action === 'move') {
+
+      //FIXME: remove inline CSS where possible;
+      if (panel.is('.justX')) {
+
+        panel.css({
+          position : 'absolute',
+          left : jbody.scrollLeft(),
+          top : panel.data('top')
+        });
+
+      } else {
+
+        panel.css({
+          left : 0,
+          top : 10,
+          position : 'fixed'
+        });
+        if (panel.position()) {
+          panel.data('top', panel.position().top);
+        }
+      }
+
+    }
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  controlPanel ');
+    }
+  };
+
+  LodLive.prototype.close = function() {
+    document.location = document.location.pathname; // remove the query string
+  };
+
+  /**
+    * Composes a query somehow, more to come
+    * @param {string} resource a resource URI I think?
+    * @param {string} module not sure how this is used yet
+    * @param {string=} testURI optional testURI used instead of resource for something
+    * @returns {string} the url
+    */
+  LodLive.prototype.composeQuery = function(resource, module, testURI) {
+    var  url, res, endpoint, inst = this, lodLiveProfile = inst.options;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    jQuery.each( lodLiveProfile.connection, function(key, value) {
+
+      var keySplit = key.split(',');
+
+      for (var a = 0; a < keySplit.length; a++) {
+
+        // checking for some sort of key, but not sure what's in the connection keys at this time
+        if (( testURI ? testURI : resource).indexOf(keySplit[a]) === 0) {
+
+          res = LodLiveUtils.getSparqlConf(module, value, lodLiveProfile).replace(/\{URI\}/ig, resource.replace(/^.*~~/, ''));
+
+          if (value.proxy) {
+
+            url = value.proxy + '?endpoint=' + value.endpoint + '&' + (value.endpointType ? inst.options.endpoints[value.endpointType] : inst.options.endpoints.all ) + '&query=' + encodeURIComponent(res);
+
+          } else {
+
+            url = value.endpoint + '?' + (value.endpointType ? inst.options.endpoints[value.endpointType] : inst.options.endpoints.all) + '&query=' + encodeURIComponent(res);
+
+          }
+
+          endpoint = value.endpoint;
+
+          return false;
+        }
+      }
+
+    });
+
+    if (inst.debugOn) {
+
+      console.debug((new Date().getTime() - start) + '  composeQuery ');
+
+    }
+
+    if (!url) {
+
+      url = 'http://system/dummy?' + resource;
+
+    }
+
+    // counterintuitive for this to be part of a 'compose' function, but leaving it for now
+    if (endpoint && inst.showInfoConsole) {
+
+      inst.queryConsole('log', {
+        title : endpoint,
+        text : res,
+        id : url,
+        uriId : resource
+      });
+
+    }
+
+    return url;
+
+  };
+
+  LodLive.prototype.guessingEndpoint = function(uri, onSuccess, onFail) {
+    var base = uri.replace(/(^http:\/\/[^\/]+\/).+/, '$1'), inst = this;
+
+    // TODO: make this more configurable by the instance or profile flags
+    var guessedEndpoint = base + 'sparql?' + inst.options.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
+
+    // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
+    $.ajax({
+      url : guessedEndpoint,
+      success : function(data) {
+
+        if (data && data.results && data.results.bindings[0]) {
+
+          // store this in our instance, not globally
+          inst.connections[base] = {
+            endpoint : base + 'sparql'
+          };
+
+          onSuccess();
+
+        } else {
+
+          onFail();
+        }
+      },
+
+      error : function() {
+        if (inst.debugOn) {
+          console.log('guessingEndpointError', arguments);
+        }
+        onFail();
+      }
+
+    });
+  };
+
+  LodLive.prototype.msg = function(msg, action, type, endpoint, inverse) {
+    // area dei messaggi
+    var inst = this, msgPanel = inst.container.find('.lodlive-message-container'), msgs;
+    if (!msg) msg = '';
+    switch(action) {
+
+      case 'init': 
+        if (!msgPanel.length) {
+          msgPanel = $('<div class="lodlive-message-container"></div>');
+          inst.container.append(msgPanel);
+        }
+        break;
+
+      default:
+        msgPanel.hide();
+    }
+    msgPanel.empty();
+    msg = msg.replace(/http:\/\/.+~~/g, '');
+    msg = msg.replace(/nodeID:\/\/.+~~/g, '');
+    msg = msg.replace(/_:\/\/.+~~/g, '');
+    msg = breakLines(msg); //TODO: find where this is - no globals
+    msg = msg.replace(/\|/g, '<br />');
+
+    msgs = msg.split(' \n ');
+
+    if (type === 'fullInfo') {
+      msgPanel.append('<div class="endpoint">' + endpoint + '</div>');
+      // why 2?
+      if (msgs.length === 2) {
+        msgPanel.append('<div class="from upperline">' + (msgs[0].length > 200 ? msgs[0].substring(0, 200) + '...' : msgs[0]) + '</div>');
+        msgPanel.append('<div class="from upperline">'+ msgs[1] + '</div>');
+      } else {
+        msgPanel.append('<div class="from upperline">' + msgs[0] + '</div>');
+      }
+    } else {
+      if (msgs.length === 2) {
+        msgPanel.append('<div class="from">' + msgs[0] + '</div>');
+        if (inverse) {
+          msgPanel.append('<div class="separ inverse sprite"></div>');
+        } else {
+          msgPanel.append('<div class="separ sprite"></div>');
+        }
+
+        msgPanel.append('<div class="from">' + msgs[1] + '</div>');
+      } else {
+        msgPanel.append('<div class="from">' + msgs[0] + '</div>');
+      }
+    }
+
+    msgPanel.show();
+
+  };
+
+  //FIXME: replace globalInfoPanelMap
+  LodLive.prototype.queryConsole = function(action, toLog) {
+    var inst = this, id = inst.hashFunc(toLog.uriId), localId = inst.hashFunc(toLog.id), infoMap = inst.infoPanelMap, panel = infoMap[id];
+
+    switch (action) {
+      case 'init': 
+        panel = inst.context.find('<div id="q' + id + '" class="lodlive-query-console"></div>');
+        infoMap[id] = panel;
+        inst.infoPanelMap = infoMap;
+        break;
+
+      case 'log': 
+        if (panel && toLog) {
+
+          if (toLog.resource) {
+
+            panel.append('<h3 class="sprite"><span>' + toLog.resource + '</span><a class="sprite">&#160;</a></h3>');
+
+            panel.on('click', 'h3 a', function() {
+
+              inst.queryConsole('close', {
+                uriId : toLog.uriId
+              });
+            }).hover(function() {
+              $(this).setBackgroundPosition({
+                x : -641
+              });
+            }, function() {
+              $(this).setBackgroundPosition({
+                x : -611
+              });
+            });
+
+          }
+
+          if (toLog.title) {
+            var h4 = $('<h4 class="t' + localId + ' sprite"><span>' + toLog.title + '</span></h4>');
+            panel.append(h4);
+            h4.hover(function() {
+              h4.setBackgroundPosition({
+                y : -700
+              });
+            }, function() {
+              h4.setBackgroundPosition({
+                y : -650
+              });
+            });
+
+            h4.click(function() {
+
+              if (h4.data('show')) {
+
+                h4.data('show', false);
+                h4.setBackgroundPosition({
+                  x : -680
+                });
+                h4.removeClass('slideOpen');
+                h4.next('div').slideToggle();
+
+              } else {
+
+                h4.data('show', true);
+                h4.setBackgroundPosition({
+                  x : -1290
+                });
+                panel.find('.slideOpen').click();
+                h4.addClass('slideOpen');
+                h4.next('div').slideToggle();
+              }
+            });
+          }
+
+          if (toLog.text) {
+            var aDiv = $('<div><span><span class="contentArea">' + (toLog.text).replace(/</gi, '&lt;').replace(/>/gi, '&gt;') + '</span></span></div>');
+            var aEndpoint = $.trim(panel.find('h4.t' + localId).clone().find('strong').remove().end().text()); //TODO: this looks like it could be simplified
+
+            //FIXME: use regex to support http and https
+            if (aEndpoint.indexOf('http:') === 0) {
+
+              var aLink = $('<span class="linkArea sprite" title="' + LodLiveUtils.lang('executeThisQuery') + '"></span>');
+
+              aLink.click(function() {
+                window.open(aEndpoint + '?query=' + encodeURIComponent(toLog.text));
+              });
+
+              aLink.hover(function() {
+                aLink.setBackgroundPosition({
+                  x : -630
+                });
+              }, function() {
+                aLink.setBackgroundPosition({
+                  x : -610
+                });
+              });
+
+              aDiv.children('span').prepend(aLink);
+            }
+
+            aDiv.css({
+              opacity : 0.95
+            });
+
+            panel.append(aDiv);
+
+          }
+
+          if (toLog.error) {
+
+            panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + LodLiveUtils.lang('enpointNotAvailable') + '</strong>');
+
+          }
+
+          // what is this?
+          if ( typeof toLog.founded == typeof 0) {
+
+            if (!toLog.founded) {
+
+              panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + LodLiveUtils.lang('propsNotFound') + '</strong>');
+
+            } else {
+
+              panel.find('h4.t' + localId + ' > span').append('<strong style="float:right">' + toLog.founded + ' ' + LodLiveUtils.lang('propsFound') + ' </strong>');
+
+            }
+
+          }
+          infoMap[id] = panel;
+          globalInfoPanelMap = infoMap;
+
+        }
+        break;
+
+      case 'remove': 
+        delete infoMap[id];
+        inst.infoPanelMap = infoMap;
+        break;
+
+      case 'show':
+        inst.context.append(panel); //TODO: why are we detaching and re-attaching?
+        break;
+
+      case 'close':
+        panel.detach();
+        break;
+
+    }
+
+  };
+
+  LodLive.prototype.updateMapPanel = function(panel) {
+    var inst = this, mapPanel;
+
+    if (inst.doDrawMap) {
+
+      mapPanel = inst.context.find('.lodlive-maps-container');
+
+      if (mapPanel.length && mapPanel.is(':visible')) {
+        //FIXME: eliminate google maps dependency in core
+        mapPanel.gmap3({
+          action : 'clear'
+        });
+        var panelContent = inst.context.find('.lodlive-panel2-content');
+        panelContent.width(800); //FIXME: magic number
+        var close = panel.find('.lodlive-close2');
+        var mapsMap = inst.mapsMap;
+        var mapKeys = Object.keys(mapsMap);
+        var mapSize = mapKeys.length;
+        var mapAction = mapSize > 1 ? { action: 'autofit' } : {};
+
+        while(mapSize--) {
+          var prop = mapKeys[mapSize];
+          //FIXME: eliminate google maps dependency from core
+          $('#mapPanel').gmap3({
+            action : 'addMarker',
+            latLng : [mapsMap[prop].lats, mapsMap[prop].longs],
+            title : unescape(mapsMap[prop].title)
+          }, mapAction);
+        }
+
+        //FIXME: eliminate inline CSS where possible
+        close.css({
+          position : 'absolute',
+          left : panelContent.width() + 1,
+          top : 0
+        });
+
+      } else {
+        inst.highlight(panel.children('.maps'), 2, 200, '-565px -450px');
+      }
+    }
+  };
+
+  LodLive.prototype.updateImagePanel = function(panel) {
+    var inst = this;
+
+    if (inst.doCollectImages) {
+
+      var imagePanel = panel.find('.lodlive-images-container span:visible');
+      if (imagePanel.length) {
+
+        var panelContent = panel.find('.lodlive-panel2-content');
+        var close = panel.find('.lodlive-close2');
+        var imageMap = inst.imagesMap;
+        var mapKeys = Object.keys(imageMap);
+        var mapSize = mapKeys.length;
+
+        if (mapSize > 0) {
+
+          imagePanel.children('.amsg').remove(); // why is this conditional, can we just remove it even if the map is empty?
+          var counter = 0;
+          
+          while (mapSize--) {
+
+            var prop = mapKeys[mapSize];
+
+            for (var a = 0; a < imageMap[prop].length; a++) {
+
+              //FIXME: this whole thing is strange and seems very inefficient, but not completely aware enough of what it's doing to change it yet
+              // triple nested maps inside an array?? surely there's a better way
+              for (var key in imageMap[prop][a]) {
+
+                if (inst.noImagesMap[prop + counter]) {
+                  
+                  counter--; // counter could go to -1, logic is strange - is this just for tiling?
+
+                } else if (!imagePanel.children('.img-' + prop + '-' + counter).length) {
+
+                  var img = $('<a href="' + unescape(key) + '" class="sprite relatedImage img-' + prop + '-' + counter + '"><img rel="' + unescape(imageMap[prop][a][key]) + '" src="' + unescape(key) + '"/></a>"');
+                  img.attr('data-prop', prop);
+                  imagePanel.prepend(img);
+                  //FIXME: eliminate fancybox dependency from core
+                  img.fancybox({
+                    'transitionIn' : 'elastic',
+                    'transitionOut' : 'elastic',
+                    'speedIn' : 400,
+                    'type' : 'image',
+                    'speedOut' : 200,
+                    'hideOnContentClick' : true,
+                    'showCloseButton' : false,
+                    'overlayShow' : false
+                  });
+
+                  //FIXME: these should be a delegated event on the imagePanel; we don't need a counter to do wrapping; 
+                  img.children('img').error(function() {
+                    img.remove();
+                    counter--;
+                    if (counter < 3) {
+
+                      panelContent.width(148); //FIXME: magic number - this should all be handled via CSS with reponsive images and inline-blocks
+
+                    } else {
+
+                      var tot = (counter / 3 + (counter % 3 > 0 ? 1 : 0) + '').split('.')[0];
+                      if (tot > 7) {
+                        tot = 7;
+                      }
+                      panelContent.width(20 + (tot) * 128);
+                    }
+                    //FIXME: eliminate inline CSS where possible
+                    close.css({
+                      position : 'absolute',
+                      left : panelContent.width() + 1,
+                      top : 0
+                    });
+                    // this is where we set images into the noImagesMap - pretty sure there's a better way but not lookng closely just yet
+                    inst.noImagesMap[prop + counter] = true;
+
+                  }).load(function() {
+
+                    var imageTag = $(this), titolo = imageTag.attr('rel'), imgW = imageTag.width(), imgH = imageTag.height();
+
+                    //wtf with all the specific sizing?  Need to use css and eliminate this
+                    if (imgW < imgH) {
+                      imageTag.height(imgH * 113 / imgW);
+                      imageTag.width(113);
+                    } else {
+                      //FIXME: eliminate inline CSS where possible
+                      imageTag.css({
+                        width : imgW * 113 / imgH,
+                        height : 113,
+                        marginLeft : -((imgW * 113 / imgH - 113) / 2)
+                      });
+                    }
+                    var controls = $('<span class="lodlive-image-controls"><span class="imgControlCenter" title="' + LodLiveUtils.lang('showResource') + '"></span><span class="imgControlZoom" title="' + LodLiveUtils.lang('zoomIn') + '"></span><span class="imgTitle">' + titolo + '</span></span>');
+                    img.append(controls);
+                    //FIXME: this totally needs to be in CSS - fthis
+                    img.hover(function() {
+                      imageTag.hide();
+                    }, function() {
+                      imageTag.show();
+                    });
+                    controls.children('.imgControlZoom').hover(function() {
+                      img.setBackgroundPosition({
+                        x : -1955
+                      });
+                    }, function() {
+                      img.setBackgroundPosition({
+                        x : -1825
+                      });
+                    });
+                    controls.children('.imgControlCenter').hover(function() {
+                      img.setBackgroundPosition({
+                        x : -2085
+                      });
+                    }, function() {
+                      img.setBackgroundPosition({
+                        x : -1825
+                      });
+                    });
+
+                    controls.children('.imgControlCenter').click(function() {
+                      panel.find('.lodlive-close2').click();
+                      inst.highlight($('#'+img.attr('data-prop')).children('.box'), 8, 100, '0 0');
+                      return false;
+                    });
+
+                    if (counter < 3) {
+                      panelContent.width(148);
+                    } else {
+                      var tot = (counter / 3 + (counter % 3 > 0 ? 1 : 0) + '').split('.')[0];
+                      if (tot > 7) {
+                        tot = 7;
+                      }
+                      panelContent.width(20 + (tot) * 128);
+                      close.css({
+                        position : 'absolute',
+                        left : panelContent.width() + 1,
+                        top : 0
+                      });
+                    }
+                  });
+
+                }
+                counter++;
+              }
+            }
+          }
+        } else {
+
+          panelContent.width(148);
+
+          if (!imagePanel.children('.amsg').length) {
+            imagePanel.append('<span class="amsg">' + LodLiveUtils.lang('imagesNotFound') + '</span>');
+          }
+        }
+
+        close.css({
+          position : 'absolute',
+          left : panelContent.width() + 1,
+          top : 0
+        });
+
+      } else {
+        inst.highlight(panel.children('.images'), 2, 200, '-610px -450px');
+      }
+    }
+
+  };
+
+  //FIXME: this needs to be a CSS animation for performance and decluttering
+  LodLive.prototype.highlight = function(object, times, speed, backmove) {
+    var inst = this;
+    if (times > 0) {
+      times--;
+      var css = object.css('background-position');
+      object.doTimeout(speed, function() {
+        object.css({
+          'background-position' : backmove
+        });
+        object.doTimeout(speed, function() {
+          object.css({
+            'background-position' : css
+          });
+          inst.highlight(object, times, speed, backmove);
+        });
+      });
+    }
+  };
+
+  LodLive.prototype.renewDrag = function(aDivList) {
+    var inst = this, generated;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    aDivList.each(function() {
+      var div = $(this), divid = div.attr('id');
+
+      if (!div.is('.ui-draggable')) {
+
+        //FIXME: need to eliminate or replace draggable which forces dependency on jquery.ui (huge file)
+        div.draggable({
+          stack : '.boxWrapper',
+          containment : 'parent',
+          start : function() {
+
+            inst.context.find('.lodlive-toolbox').remove();
+
+            $('#line-' + divid).clearCanvas();
+
+            var generatedRev = inst.storeIds['rev' + divid];
+
+            if (generatedRev) {
+
+              for (var a = 0; a < generatedRev.length; a++) {
+
+                generated = inst.storeIds['gen' + generatedRev[a]];
+                $('#line-' + generatedRev[a]).clearCanvas();
+              }
+            }
+          },
+          drag : function(event, ui) {
+          },
+          stop : function(event, ui) {
+            inst.drawAllLines($(this));
+          }
+        });
+      }
+    });
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  renewDrag ');
+    }
+  };
+
+  LodLive.prototype.centerBox = function(aBox) {
+    var inst = this, ch = inst.context.height(), cw = inst.context.width(), bw = aBox.width() || 65, bh = aBox.height() || 65, start;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    var top = (ch - 65) / 2 + (inst.context.scrollTop() || 0);
+    var left = (cw - 65) / 2 + (inst.context.scrollLeft() || 0);
+    var props = {
+      position : 'absolute',
+      left : left,
+      top : top,
+      opacity: 0
+    };
+
+    //console.log('centering top: %s, left: %s', top, left);
+
+    //FIXME: we don't want to assume we scroll the entire window here, since we could be just a portion of the screen or have multiples
+    inst.context.parent().scrollTop(ch / 2 - inst.context.parent().height() / 2 + 60);
+    inst.context.parent().scrollLeft(cw / 2 - inst.context.parent().width() / 2 + 60);
+    console.log(inst.context.parent().scrollTop());
+    //window.scrollBy(cw / 2 - jwin.width() / 2 + 25, ch / 2 - jwin.height() / 2 + 65);
+    aBox.css(props)
+
+      aBox.animate({ opacity: 1}, 1000);
+
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  centerBox ');
+    }
+  };
+
+  LodLive.prototype.autoExpand = function(obj) {
+    var inst = this, start;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    $.each(inst.innerPageMap, function(key, element) {
+
+      var closed = element.children('.relatedBox:not([class*=exploded])');
+
+      if (closed.length) {
+
+        if (!element.parent().length) {
+          inst.context.append(element);
+        }
+
+        closed.each(function() {
+          box = $(moreInfoOnThis);
+          var aId = box.attr('relmd5');
+          
+          //FIXME: not sure I want IDs here but leaving for now
+          var newObj = inst.context.children('#' + aId);
+
+          if (newObj.length > 0) {
+            box.click();
+          }
+        });
+
+        inst.context.children('.innerPage').detach();
+
+      }
+    });
+
+    //FIXME: this does the same thing as the function above, consolidate
+    inst.context.find('.relatedBox:not([class*=exploded])').each(function() {
+      var box = $(this);
+      var aId = box.attr('relmd5');
+      var newObj = context.children('#' + aId);
+      if (newObj.length > 0) {
+        box.click();
+      }
+    });
+
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  autoExpand ');
+    }
+
+  };
+
+  LodLive.prototype.addNewDoc = function(obj, ele, callback) {
+    var inst = this, start;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    var aId = ele.attr('relmd5');
+    var newObj = inst.context.find('#' + aId);
+    var isInverse = ele.is('.inverse');
+    var exist = true;
+    ele = $(ele);
+
+    // verifico se esistono box rappresentativi dello stesso documento
+    // nella pagina
+    if (!newObj.length) {
+
+      newObj = $(inst.boxTemplate);
+      exist = false;
+
+    }
+
+    var circleId = ele.data('circleid');
+    var originalCircus = $('#' + circleId);
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  addNewDoc 01 ');
+    }
+
+    if (!isInverse) {
+
+      if (inst.debugOn) {
+
+        console.debug((new Date().getTime() - start) + '  addNewDoc 02 ');
+      }
+
+      var connected = inst.storeIds['gen' + circleId];
+      if (!connected) {
+        connected = [aId];
+      } else {
+        if ($.inArray(aId, connected) == -1) {
+          connected.push(aId);
+        } else {
+          return;
+        }
+      }
+
+      if (inst.debugOn) {
+        console.debug((new Date().getTime() - start) + '  addNewDoc 03 ');
+      }
+
+      inst.storeIds['gen' + circleId] = connected;
+
+      connected = inst.storeIds['rev'+ aId];
+      if (!connected) {
+        connected = [circleId];
+      } else {
+        if ($.inArray(circleId, connected) == -1) {
+          connected.push(circleId);
+        }
+      }
+      if (inst.debugOn) {
+        console.debug((new Date().getTime() - start) + '  addNewDoc 04 ');
+      }
+      inst.storeIds['rev' + aId] = connected;
+    }
+
+    var propertyName = ele.data('property');
+    var rel = ele.attr('rel');
+    newObj.attr('id', aId);
+    newObj.attr('rel', rel);
+
+    var fromInverse = isInverse ? 'div[data-property="' + propertyName + '"][rel="' + rel + '"]' : null;
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  addNewDoc 05 ');
+    }
+    // nascondo l'oggetto del click e carico la risorsa successiva
+    ele.hide();
+    if (!exist) {
+      if (inst.debugOn) {
+        console.debug((new Date().getTime() - start) + '  addNewDoc 06 ');
+      }
+      var pos = parseInt(ele.attr('data-circlePos'), 10);
+      var parts = parseInt(ele.attr('data-circleParts'), 10);
+      var chordsListExpand = inst.circleChords(parts > 10 ? (pos % 2 > 0 ? originalCircus.width() * 3 : originalCircus.width() * 2) : originalCircus.width() * 5 / 2, parts, originalCircus.position().left + obj.width() / 2, originalCircus.position().top + originalCircus.height() / 2, null, pos);
+      inst.context.append(newObj);
+      //FIXME: eliminate inline CSS where possible
+      newObj.css({
+        left : (chordsListExpand[0][0] - newObj.height() / 2),
+        top : (chordsListExpand[0][1] - newObj.width() / 2),
+        opacity : 1,
+        zIndex : 99
+      });
+
+      inst.renewDrag(inst.context.children('.boxWrapper'));
+      if (inst.debugOn) {
+        console.debug((new Date().getTime() - start) + '  addNewDoc 07 ');
+      }
+      if (!isInverse) {
+        if (inst.debugOn) {
+          console.debug((new Date().getTime() - start) + '  addNewDoc 08 ');
+        }
+        if (inst.doInverse) {
+          inst.openDoc(rel, newObj, fromInverse);
+        } else {
+          inst.openDoc(rel, newObj);
+        }
+        inst.drawaLine(obj, newObj, propertyName);
+      } else {
+        if (debugOn) {
+          console.debug((new Date().getTime() - start) + '  addNewDoc 09 ');
+        }
+        inst.openDoc(rel, newObj, fromInverse);
+      }
+    } else {
+      if (!isInverse) {
+        if (inst.debugOn) {
+          console.debug((new Date().getTime() - start) + '  addNewDoc 10 ');
+        }
+        inst.renewDrag(inst.context.children('.boxWrapper'));
+        inst.drawaLine(obj, newObj, propertyName);
+      } else {
+        if (inst.debugOn) {
+          console.debug((new Date().getTime() - start) + '  addNewDoc 11 ');
+        }
+      }
+    }
+    //TODO: why is there a callback if this is not asnyc?
+    if (callback) {
+      callback();
+    }
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  addNewDoc ');
+    }
+    return false;
+  };
+
+  LodLive.prototype.removeDoc = function(obj, callback) {
+    var inst = this;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    inst.context.find('.lodlive-toolbox').remove(); // why remove and not hide?
+    
+    var id = obj.attr('id');
+    inst.queryConsole('remove', {
+      uriId : obj.attr('rel')
+    });
+    inst.context.find('#line-' + id).clearCanvas();
+
+    var generatedRev = inst.storeIds['rev' + id];
+    if (generatedRev) {
+      for (var a = 0; a < generatedRev.length; a++) {
+        inst.context.find('#line-' + generatedRev[a]).clearCanvas();
+      }
+    }
+    inst.docInfo('', 'close');
+    var cp = inst.context.find('.lodLiveControlPanel');
+
+    if (inst.doCollectImages) {
+      var imagesMap = inst.imagesMap;
+      if (imagesMap[id]) {
+        delete imagesMap[id];
+        inst.updateImagePanel(cp);
+        cp.find('a[class*=img-' + id + ']').remove();
+      }
+    }
+
+    if (inst.doDrawMap) {
+      var mapsMap = inst.mapsMap;
+      if (mapsMap[id]) {
+        delete mapsMap[id];
+        inst.updateMapPanel(cp);
+      }
+    }
+
+    obj.fadeOut('normal', null, function() {
+      obj.remove();
+      $.each(inst.innerPageMap, function(key, element) {
+        if (element.children('.' + id).length) {
+          var keyEle = inst.context.find('#' + key);
+          keyEle.append(element);
+          var lastClick = keyEle.find('.lastClick').attr('rel');
+          if (!keyEle.children('.innerPage').children('.' + lastClick).length) {
+            //TODO: again, why detaching?
+            keyEle.children('.innerPage').detach();
+          }
+        }
+      });
+
+      inst.context.find('.' + id).each(function() {
+        var found = $(this);
+        found.show();
+        found.removeClass('exploded');
+      });
+
+      var generated = inst.storeIds['gen' + id];
+      var generatedRev = inst.storeIds['rev' + id];
+      var int, int2, generatedBy;
+
+      if (generatedRev) {
+
+        for (int = 0; int < generatedRev.length; int++) {
+
+          generatedBy = inst.storeIds['gen' + generatedRev[int]];
+
+          if (generatedBy) {
+          
+            for (int2 = 0; int2 < generatedBy.length; int2++) {
+          
+              if (generatedBy[int2] === id) {
+          
+                generatedBy.splice(int2, 1);
+          
+              }
+            }
+          }
+          // don't need to set it again since it modifies the same object
+          // inst.storeIds['gen' + generatedRev[int]] = generatedBy;
+        }
+      }
+      // really wish there were comments here, why these two loops?
+      if (generated) {
+
+        for (int = 0; int < generated.length; int++) {
+
+          generatedBy = inst.storeIds['rev' + generated[int]];
+
+          if (generatedBy) {
+            for (int2 = 0; int2 < generatedBy.length; int2++) {
+              if (generatedBy[int2] == id) {
+                generatedBy.splice(int2, 1);
+              }
+            }
+          }
+          // don't need to set it again since it modifies the same object
+          // inst.storeIds['rev' + generated[int] = generatedBy;
+        }
+      }
+
+      generatedRev = inst.storeIds['rev' +  id];
+      //TODO: three loops? look for a way to simplify
+      if (generatedRev) {
+
+        for (int = 0; int < generatedRev.length; int++) {
+
+          generated = inst.storeIds['gen' + generatedRev[int]];
+          if (generated) {
+
+            for (int2 = 0; int2 < generated.length; int2++) {
+
+              inst.drawaLine(inst.context.find('#' + generatedRev[int]), inst.context.find('#' + generated[int2]));
+
+            }
+          }
+        }
+      }
+      delete inst.storeIds['rev' + id];
+      delete inst.storeIds['gen' + id];
+
+    });
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  removeDoc ');
+    }
+  };
+
+  var _builtins = {
+    'expand': {
+      title: 'Expand all',
+      icon: 'fa fa-arrows-alt',
+      handler: function(obj, inst) {
+        var idx = 0;
+        var elements = obj.find('.relatedBox:visible');
+        var totalElements = elements.length;
+        var onTo = function() {
+          var elem= elements.eq(idx++);
+          if (elem.length) {
+            elem.click();
+          }
+          if (idx < totalElements) {
+            window.setTimeout(onTo, 75);
+          }
+        };
+        window.setTimeout(onTo, 75);
+      }
+    },
+    'info': {
+      title: 'More info',
+      icon: 'fa fa-info-circle',
+      handler: function(obj, inst) {
+        inst.queryConsole('show', {
+          uriId : obj.attr('rel')
+        });
+      }
+    },
+    'rootNode': {
+      title: 'Make root node',
+      icon: 'fa fa-dot-circle-o',
+      handler: function(obj, instance) {
+        instance.context.empty();
+        instance.init(obj.attr('rel'));
+      }
+    },
+    'remove': {
+      title: 'Remove this node',
+      icon: 'fa fa-trash',
+      hander: function(obj, inst) {
+        inst.removeDoc(obj);
+      }
+    },
+    'openPage': {
+      title: 'Open in another page',
+      icon: 'fa fa-external-link',
+      handler: function(obj, inst) {
+        window.open(obj.attr('rel'));
+      }
+    }
+  };
+
+  LodLive.prototype.addClick = function(obj, callback) {
+    var inst = this;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    // per ogni nuova risorsa collegata al documento corrente imposto le
+    // azioni "onclick"
+
+    obj.find('.relatedBox').each(function() {
+      var box = $(this);
+      box.attr('relmd5', inst.hashFunc(box.attr('rel')));
+      box.click(function(evt) {
+        box.addClass('exploded');
+        inst.addNewDoc(obj, box);
+        evt.stopPropagation();
+      });
+
+      box.hover(function() {
+        inst.msg(box.data('title'), 'show', null, null, box.is('.inverse'));
+      }, function() {
+        inst.msg(null, 'hide');
+      });
+    });
+
+    obj.find('.groupedRelatedBox').each(function() {
+      var box = $(this);
+      box.click(function() {
+        if (box.data('show')) {
+          box.data('show', false);
+          inst.docInfo('', 'close');
+          box.removeClass('lastClick');
+          obj.find('.' + box.attr('rel')).fadeOut('fast');
+          box.fadeTo('fast', 1);
+          obj.children('.innerPage').detach();
+        } else {
+          box.data('show', true);
+          obj.append(inst.innerPageMap[obj.attr('id')]);
+          inst.docInfo('', 'close');
+          obj.find('.lastClick').removeClass('lastClick').click();
+          if (!obj.children('.innerPage').length) {
+            obj.append(inst.innerPageMap[obj.attr('id')]);
+          }
+          box.addClass('lastClick');
+          obj.find('.' + box.attr('rel') + ':not([class*=exploded])').fadeIn('fast');
+          box.fadeTo('fast', 0.3);
+        }
+      });
+
+      box.hover(function() {
+        inst.msg(box.attr('data-title'), 'show', null, null, box.is('.inverse'));
+      }, function() {
+        inst.msg(null, 'hide');
+      });
+    });
+
+    inst.innerPageMap[obj.attr('id')] = obj.children('.innerPage');
+    obj.children('.innerPage').detach();
+    // aggiungo le azioni dei tools
+    obj.find('.actionBox[rel=contents]').click(function() {
+      inst.docInfo(obj, 'open');
+    });
+
+    obj.find('.actionBox[rel=tools]').click(function() {
+      var container = $(this), tools = container.find('.lodlive-toolbox');
+
+      // generate toolbox dom on first click
+      // TODO: should do this during initialization so we can configure which boxes to show
+      if (!tools.length) {
+        tools = $('<div class="lodlive-toolbox"></div>');
+        jQuery.each(inst.UI.tools, function() {
+          var toolConfig = this, t;
+          if (toolConfig.builtin) {
+            toolConfig = _builtins[toolConfig.builtin];
+          }
+          t = jQuery('<div class="innerActionBox" title="' + LodLiveUtils.lang(toolConfig.title) + '"><span class="' + toolConfig.icon + '"></span></div>');
+          t.appendTo(tools).on('click', function() { toolConfig.handler.call(inst, obj, inst); });
+        });
+        var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
+        container.append(toolWrapper);
+        tools.fadeIn('fast');
+      } else {
+        tools.fadeToggle('fast');
+      }
+
+    });
+
+    //FIXME: why do we need a callback if not async?
+    if (callback) {
+      callback();
+    }
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  addClick ');
+    }
+  };
+
+  LodLive.prototype.parseRawResourceDoc = function(destBox, URI) {
+    var inst = this;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    var uris = [];
+    var bnodes = [];
+    var values = [];
+    var def = inst.options['default'];
+
+    if (def) {
+
+      // attivo lo sparql interno basato su sesame
+      var res = LodLiveUtils.getSparqlConf('document', def, inst.options).replace(/\{URI\}/ig, URI);
+      var url = def.endpoint + '?uri=' + encodeURIComponent(URI) + '&query=' + encodeURIComponent(res);
+
+      if (inst.showInfoConsole) {
+        inst.queryConsole('log', {
+          title : LodLiveUtils.lang('endpointNotConfiguredSoInternal'),
+          text : res,
+          uriId : URI
+        });
+      }
+
+      $.ajax({
+        url : url,
+        beforeSend : function() {
+          inst.context.append(destBox);
+          destBox.html('<img style=\"margin-left:' + (destBox.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
+          destBox.css({
+            position : 'fixed',
+            right: 20,
+            top : 0
+          });
+          destBox.attr('data-top', destBox.position().top);
+        },
+
+        success : function(json) {
+          json = json.results && json.results.bindings;
+          $.each(json, function(key, value) {
+            //TODO: fix this
+            //FIXME: eval is not needed here. Too fatigued to fix it properly yet - saving for later
+            //TODO: definitely fix this
+            if (value.object.type === 'uri') {
+              eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+            } else if (value.object.type == 'bnode') {
+              eval('bnodes.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+            } else {
+              eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+            }
+          });
+
+          destBox.html('');
+          if (inst.debugOn) {
+            console.debug(URI + '   ');
+            console.debug(values);
+          }
+
+          inst.formatDoc(destBox, values, uris, bnodes, URI);
+        },
+        error : function(e, b, v) {
+          destBox.html('');
+          // not sure what this says, should it be a configurable message?
+          values = [{
+            'http://system/msg' : 'risorsa non trovata: ' + destBox.attr('rel')
+          }];
+          inst.formatDoc(destBox, values, uris, bnodes, URI);
+        }
+      });
+    }
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  parseRawResourceDoc ');
+    }
+  };
+
+  LodLive.prototype.docInfo = function(obj, action) {
+    var inst = this, docInfo = inst.container.find('.lodlive-docinfo');
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    switch(action) {
+      case 'open':
+
+        if (!docInfo.length) {
+          docInfo = $('<div class="lodlive-docinfo" rel="info-' + URI + '"></div>');
+          inst.container.append(docInfo);
+        }
+
+        var URI = obj.attr('rel');
+        docInfo.attr('rel', URI);
+
+        // predispongo il div contenente il documento
+
+        var SPARQLquery = inst.composeQuery(URI, 'document');
+        var uris = [];
+        var bnodes = [];
+        var values = [];
+        if (SPARQLquery.indexOf('http://system/dummy') === 0) {
+
+          inst.parseRawResourceDoc(docInfo, URI);
+
+        } else {
+
+          $.ajax({
+            url : SPARQLquery,
+            success : function(json) {
+              json = json.results && json.results.bindings;
+
+              //TODO: FIXME: these evals again - fix em later, seriously -- maybe combine them into a reusable func if they do the same thing
+
+              $.each(json, function(key, value) {
+                if (value.object.type == 'uri') {
+                  eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+                } else if (value.object.type == 'bnode') {
+                  eval('bnodes.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+                } else {
+                  eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+                }
+              });
+
+              docInfo.html('');
+              inst.formatDoc(docInfo, values, uris, bnodes, URI);
+            },
+            error : function(e, b, v) {
+              destBox.html('');
+              values = [{
+                'http://system/msg' : 'risorsa non trovata: ' + destBox.attr('rel')
+              }];
+              inst.formatDoc(docInfo, values, uris, bnodes, URI);
+            }
+          });
+        }
+        break;
+
+        default:
+          docInfo.fadeOut('fast');
+    }
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  docInfo ');
+    }
+  };
+
+  LodLive.prototype.processDraw = function(x1, y1, x2, y2, canvas, toId) {
+    var inst = this, start, lodLiveProfile = inst.options;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+    // recupero il nome della proprieta'
+    var label = '';
+
+    var lineStyle = 'standardLine';
+    //FIXME:  don't use IDs
+    if (inst.context.find("#" + toId).length > 0) {
+
+      label = canvas.attr("data-propertyName-" + toId);
+
+      var labeArray = label.split("\|");
+
+      label = "\n";
+
+      for (var o = 0; o < labeArray.length; o++) {
+
+        if (lodLiveProfile.arrows[$.trim(labeArray[o])]) {
+          lineStyle = inst.options.arrows[$.trim(labeArray[o])] + "Line";
+        }
+
+        var shortKey = LodLive.shortenKey(labeArray[o]);
+        var lastHash = shortKey.lastIndexOf('#');
+        var lastSlash = shortKey.lastIndexOf('/');
+
+        if (label.indexOf("\n" + shortKey + "\n") == -1) {
+          label += shortKey + "\n";
+        }
+      }
+    }
+    //if (lineStyle === 'standardLine') { it appears they all end up back here anyway
+    if (lineStyle !== 'isSameAsLine') {
+
+      inst.standardLine(label, x1, y1, x2, y2, canvas, toId);
+
+    } else {
+      //TODO: doesn't make sense to have these live in different files.  Should make line drawers an extensible interface
+      LodLiveUtils.customLines(inst.context, lineStyle, label, x1, y1, x2, y2, canvas, toId);
+    }
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  processDraw ');
+    }
+    
+  };
+
+  LodLive.prototype.drawAllLines = function(obj) {
+
+    var inst = this, id = obj.attr('id'), a;
+
+    var generated = inst.storeIds['gen' + id];
+    var generatedRev = inst.storeIds['rev' + id];
+    // elimino la riga se giÃ  presente (in caso di
+    // spostamento di un
+    // box)
+    inst.context.find('#line-' + id).clearCanvas();
+    if (generated) {
+      for (a = 0; a < generated.length; a++) {
+        inst.drawaLine(obj, inst.context.find('#' + generated[a]));
+      }
+    }
+
+    if (generatedRev) {
+      for (a = 0; a < generatedRev.length; a++) {
+        generated = inst.storeIds['gen' + generatedRev[a]];
+        $('#line-' + generatedRev[a]).clearCanvas();
+        if (generated) {
+          for (var a2 = 0; a2 < generated.length; a2++) {
+            inst.drawaLine(inst.context.find('#' + generatedRev[a]), inst.context.find('#' + generated[a2]));
+          }
+        }
+      }
+    }
+
+  };
+
+  LodLive.prototype.drawaLine = function(from, to, propertyName) {
+    var inst = this, start;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    var pos1 = from.position();
+    var pos2 = to.position();
+    var aCanvas = $("#line-" + from.attr("id"));
+    // console.debug(new Date().getTime()+'moving - '+(new Date())+" -
+    // #line-" +
+    // from.attr("id") + "-" + to.attr("id"))
+    if (aCanvas.length == 1) {
+      if (propertyName) {
+        aCanvas.attr("data-propertyName-" + to.attr("id"), propertyName);
+      }
+      inst.processDraw(pos1.left + from.width() / 2, pos1.top + from.height() / 2, pos2.left + to.width() / 2, pos2.top + to.height() / 2, aCanvas, to.attr("id"));
+    } else {
+      aCanvas = $("<canvas data-propertyName-" + to.attr("id") + "=\"" + propertyName + "\" height=\"" + inst.context.height() + "\" width=\"" + inst.context.width() + "\" id=\"line-" + from.attr("id") + "\"></canvas>");
+      inst.context.append(aCanvas);
+      aCanvas.css({
+        'position' : 'absolute',
+        'zIndex' : '0',
+        'top' : 0,
+        'left' : 0
+      });
+      inst.processDraw(pos1.left + from.width() / 2, pos1.top + from.height() / 2, pos2.left + to.width() / 2, pos2.top + to.height() / 2, aCanvas, to.attr("id"));
+    }
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  drawaLine ');
+    }
+  };
+
+  LodLive.prototype.formatDoc = function(destBox, values, uris, bnodes, URI) {
+    var inst = this;
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 0);
+      start = new Date().getTime();
+    }
+
+    //TODO:  Some of these seem like they should be Utils functions instead of on the instance, not sure yet
+    // recupero il doctype per caricare le configurazioni specifiche
+    var docType = inst.getJsonValue(uris, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'default');
+    // carico le configurazioni relative allo stile
+    destBox.addClass(inst.getProperty("document", "className", docType));
+    // ed ai path degli oggetti di tipo immagine
+    var images = inst.getProperty("images", "properties", docType);
+    // ed ai path dei link esterni
+    var weblinks = inst.getProperty("weblinks", "properties", docType);
+    // ed eventuali configurazioni delle proprietÃ  da mostrare
+    // TODO: fare in modo che sia sempre possibile mettere il dominio come fallback
+    var propertiesMapper = inst.getProperty("document", "propertiesMapper", URI.replace(/(http:\/\/[^\/]+\/).+/, "$1"));
+
+    // se la proprieta' e' stata scritta come stringa la trasformo in un
+    // array
+    if (!Array.isArray(images)) {
+      images = [images];
+    }
+    if (!Array.isArray(weblinks)) {
+      weblinks = [weblinks];
+    }
+
+    var result = "<div></div>";
+    var jResult = $(result);
+    // destBox.append(jResult);
+
+    // estraggo i contenuti
+    var contents = [];
+    $.each(values, function(key, value) {
+      for (var akey in value) {
+        var newVal = {};
+        newVal[akey] = value[akey];
+        contents.push(newVal);
+      }
+    });
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 1);
+    }
+    // calcolo le uri e le url dei documenti correlati
+    var connectedImages = [];
+    var connectedWeblinks = [];
+    var types = [];
+
+    $.each(uris, function(key, value) {
+      for (var akey in value) {
+        var newVal = {};
+        newVal[akey] = value[akey];
+        // escludo la definizione della classe, le proprieta'
+        // relative alle immagini ed ai link web
+        if (akey != 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+          if ($.inArray(akey, images) != -1) {
+            connectedImages.push(newVal);
+          } else if ($.inArray(akey, weblinks) != -1) {
+            connectedWeblinks.push(newVal);
+          }
+        } else {
+          types.push(unescape(value[akey]));
+        }
+      }
+    });
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 2);
+    }
+
+    // aggiungo al box le immagini correlate
+    var imagesj = null;
+    if (connectedImages.length > 0) {
+      imagesj = $('<div class="section" style="height:80px"></div>');
+      $.each(connectedImages, function(key, value) {
+        for (var akey in value) {
+          imagesj.append("<a class=\"relatedImage\" href=\"" + unescape(value[akey]) + "\"><img src=\"" + unescape(value[akey]) + "\"/></a> ");
+        }
+      });
+    }
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 3);
+    }
+
+    var webLinkResult = null;
+    // aggiungo al box i link esterni correlati
+    if (connectedWeblinks.length > 0) {
+      webLinkResult = "<div class=\"section\"><ul style=\"padding:0;margin:0;display:block;overflow:hidden;tex-overflow:ellipses\">";
+      $.each(connectedWeblinks, function(key, value) {
+        for (var akey in value) {
+          webLinkResult += "<li><a class=\"relatedLink\" target=\"_blank\" data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" href=\"" + unescape(value[akey]) + "\">" + unescape(value[akey]) + "</a></li>";
+        }
+      });
+      webLinkResult += "</ul></div>";
+      // jContents.append(webLinkResult);
+    }
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 4);
+    }
+    // aggiungo al box le informazioni descrittive della risorsa
+    var jContents = $('<div></div>');
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 5);
+    }
+
+    if (types.length > 0) {
+      var jSection = $("<div class=\"section\"><label data-title=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#type\">type</label><div></div></div>");
+
+      jSection.find('label').each(function() {
+        var lbl = $(this);
+        lbl.hover(function() {
+          inst.msg(lbl.attr('data-title'), 'show');
+        }, function() {
+          inst.msg(null, 'hide');
+        });
+      });
+
+      for (var int = 0; int < types.length; int++) {
+        var shortKey = LodLive.shortenKey(types[int]);
+        // is this really appended to ALL children divs or we looking for something specific?
+        jSection.children('div').append("<span title=\"" + types[int] + "\">" + shortKey + " </span>");
+      }
+
+      jContents.append(jSection);
+    }
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 6);
+    }
+
+    if (imagesj) {
+      jContents.append(imagesj);
+    }
+
+    if (webLinkResult) {
+      //TODO: delegate hover
+      var jWebLinkResult = $(webLinkResult);
+      jWebLinkResult.find('a').each(function() {
+        $(this).hover(function() {
+          inst.msg($(this).attr('data-title'), 'show');
+        }, function() {
+          inst.msg(null, 'hide');
+        });
+      });
+      jContents.append(jWebLinkResult);
+    }
+
+    if (inst.debugOn) {
+      console.debug("formatDoc " + 7);
+    }
+
+    if (propertiesMapper) {
+      $.each(propertiesMapper, function(filter, label) {
+        //show all properties
+        $.each(contents, function(key, value) {
+          for (var akey in value) {
+            if (filter == akey) {
+              var shortKey = label;
+              try {
+                var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div>");
+                jSection.find('label').each(function() {
+                  $(this).hover(function() {
+                    inst.msg($(this).attr('data-title'), 'show');
+                  }, function() {
+                    inst.msg(null, 'hide');
+                  });
+                });
+                jContents.append(jSection);
+              } catch (e) {
+                // /console.debug(value[akey] + " --- " + shortKey);
+              }
+              return true;
+            }
+          }
+        });
+      });
+
+    } else {
+      //show all properties
+      $.each(contents, function(key, value) {
+        for (var akey in value) {
+          var shortKey = akey;
+          // calcolo una forma breve per la visualizzazione
+          // dell'etichetta della proprieta'
+          while (shortKey.indexOf('/') > -1) {
+            shortKey = shortKey.substring(shortKey.indexOf('/') + 1);
+          }
+          while (shortKey.indexOf('#') > -1) {
+            shortKey = shortKey.substring(shortKey.indexOf('#') + 1);
+          }
+          try {
+
+            var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div>");
+            jSection.find('label').each(function() {
+              $(this).hover(function() {
+                inst.msg($(this).attr('data-title'), 'show');
+              }, function() {
+                inst.msg(null, 'hide');
+              });
+            });
+            jContents.append(jSection);
+          } catch (e) { // what are we catching here?
+            // /console.debug(value[akey] + " --- " + shortKey);
+          }
+        }
+      });
+    }
+
+    if (bnodes.length > 0) {
+      // processo i blanknode
+      $.each(bnodes, function(key, value) {
+        for (var akey in value) {
+          var shortKey = LodLive.shortenKey(akey);
+
+          var jBnode = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><span class=\"bnode\"></span></div><div class=\"separ sprite\"></div>");
+          jBnode.find('label').each(function() {
+            $(this).hover(function() {
+              inst.msg($(this).attr('data-title'), 'show');
+            }, function() {
+              inst.msg(null, 'hide');
+            });
+          });
+          inst.resolveBnodes(unescape(value[akey]), URI, jBnode, jContents);
+
+        }
+      });
+    }
+
+    if (contents.length == 0 && bnodes.length == 0) {
+      var jSection = $("<div class=\"section\"><label data-title=\"" + LodLiveUtils.lang('resourceMissingDoc') + "\"></label><div>" + LodLiveUtils.lang('resourceMissingDoc') + "</div></div><div class=\"separ sprite\"></div>");
+      jSection.find('label').each(function() {
+        $(this).hover(function() {
+          inst.msg($(this).attr('data-title'), 'show');
+        }, function() {
+          inst.msg(null, 'hide');
+        });
+      });
+      jContents.append(jSection);
+    }
+
+    destBox.append(jResult);
+    destBox.append(jContents);
+    // destBox.append("<div class=\"separLast\"></div>");
+
+    // aggiungo le funzionalita' per la visualizzazione delle immagini
+    //FIXME: consolidate this
+    jContents.find(".relatedImage").each(function() {
+      $(this).fancybox({
+        'transitionIn' : 'elastic',
+        'transitionOut' : 'elastic',
+        'speedIn' : 400,
+        'type' : 'image',
+        'speedOut' : 200,
+        'hideOnContentClick' : true,
+        'showCloseButton' : false,
+        'overlayShow' : false
+      });
+
+      $(this).find('img').each(function() {
+        $(this).load(function() {
+          if ($(this).width() > $(this).height()) {
+            $(this).height($(this).height() * 80 / $(this).width());
+            $(this).width(80);
+          } else {
+            $(this).width($(this).width() * 80 / $(this).height());
+            $(this).height(80);
+          }
+        });
+        $(this).error(function() {
+          $(this).attr("title", LodLiveUtils.lang('noImage') + " \n" + $(this).attr("src"));
+          $(this).attr("src", "img/immagine-vuota-" + $.jStorage.get('selectedLanguage') + ".png");
+        });
+      });
+    });
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  formatDoc ');
+    }
+  };
+
+  LodLive.prototype.resolveBnodes = function(val, URI, destBox, jContents) {
+    var inst = this;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    var SPARQLquery = inst.composeQuery(val, 'bnode', URI);
+
+    $.ajax({
+      url : SPARQLquery,
+      beforeSend : function() {
+        destBox.find('span[class=bnode]').html('<img src="img/ajax-loader-black.gif"/>');
+
+      },
+      success : function(json) {
+        destBox.find('span[class=bnode]').html('');
+        json = json['results']['bindings'];
+        $.each(json, function(key, value) {
+          var shortKey = LodLive.shortenKey(value.property.value);
+          if (value.object.type == 'uri') {
+
+          } else if (value.object.type == 'bnode') {
+            var jBnode = $("<span><label data-title=\"" + value.property.value + "\"> / " + shortKey + "</label><span class=\"bnode\"></span></span>");
+            jBnode.find('label').each(function() {
+              $(this).hover(function() {
+                inst.msg($(this).attr('data-title'), 'show');
+              }, function() {
+                inst.msg(null, 'hide');
+              });
+            });
+            destBox.find('span[class=bnode]').attr("class", "").append(jBnode);
+            inst.resolveBnodes(value.object.value, URI, destBox, jContents);
+          } else {
+            destBox.find('span[class=bnode]').append('<div><em title="' + value.property.value + '">' + shortKey + "</em>: " + value.object.value + '</div>');
+            // destBox.find('span[class=bnode]').attr("class",
+            // "");
+          }
+          jContents.append(destBox);
+          if (jContents.height() + 40 > $(window).height()) {
+            jContents.slimScroll({
+              height : $(window).height() - 40,
+              color : '#fff'
+            });
+            jContents.parent().find("div.separLast").remove();
+          } else {
+            jContents.parent().append("<div class=\"separLast\"></div>");
+          }
+        });
+      },
+      error : function(e, b, v) {
+        destBox.find('span').html('');
+
+      }
+    });
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  resolveBnodes ');
+    }
+    return val;
+  };
+
+  //TODO: this doesn't need to be on the prototype since it's a stateless utility function - are the metrics necessary?
+  LodLive.prototype.circleChords = function(radius, steps, centerX, centerY, breakAt, onlyElement) {
+    var inst = this;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+    var values = [];
+    var i = 0;
+    if (onlyElement) {
+      // ottimizzo i cicli evitando di calcolare elementi che non
+      // servono
+      i = onlyElement;
+      var radian = (2 * Math.PI) * (i / steps);
+      values.push([centerX + radius * Math.cos(radian), centerY + radius * Math.sin(radian)]);
+    } else {
+      for (; i < steps; i++) {
+        // calcolo le coodinate lungo il cerchio del box per
+        // posizionare
+        // strumenti ed altre risorse
+        var radian = (2 * Math.PI) * (i / steps);
+        values.push([centerX + radius * Math.cos(radian), centerY + radius * Math.sin(radian)]);
+      }
+    }
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  circleChords ');
+    }
+    return values;
+  };
+
+  LodLive.prototype.getJsonValue = function(map, key, defaultValue) {
+    var inst = this;
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+    var returnVal = [];
+    $.each(map, function(skey, value) {
+      for (var akey in value) {
+        if (akey == key) {
+          returnVal.push(unescape(value[akey]));
+        }
+      }
+    });
+    if (returnVal == []) {
+      returnVal = [defaultValue];
+    }
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  getJsonValue');
+    }
+    return returnVal;
+  };
+
+  /**
+    * Get a property within an area of a context
+    *
+    * @param {string} area the name of the area
+    * @param {string} prop the name of the property
+    * @param {array | string} context a context name or an array of context names
+    * @returns {string=} the property, if found
+    */
+  LodLive.prototype.getProperty = function(area, prop, context) {
+    var inst = this, lodLiveProfile = inst.options;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+
+    if (Array.isArray(context)) {
+
+      for (var a = 0; a < context.length; a++) {
+
+        if (lodLiveProfile[context[a]] && lodLiveProfile[context[a]][area]) {
+          if (prop) {
+            return lodLiveProfile[context[a]][area][prop] ? lodLiveProfile[context[a]][area][prop] : lodLiveProfile['default'][area][prop];
+          } else {
+            return lodLiveProfile[context[a]][area] ? lodLiveProfile[context[a]][area] : lodLiveProfile['default'][area];
+          }
+
+        }
+      }
+
+    } else {
+      // it's expected to be a string if not an array
+      context = context + '';
+      if (lodLiveProfile[context] && lodLiveProfile[context][area]) {
+        if (prop) {
+          return lodLiveProfile[context][area][prop] ? lodLiveProfile[context][area][prop] : lodLiveProfile['default'][area][prop];
+        } else {
+          return lodLiveProfile[context][area] ? lodLiveProfile[context][area] : lodLiveProfile['default'][area];
+        }
+
+      }
+
+    } 
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  getProperty');
+    }
+
+    if (lodLiveProfile['default'][area]) {
+      if (prop) {
+        return lodLiveProfile['default'][area][prop];
+      } else {
+        return lodLiveProfile['default'][area];
+      }
+    } else {
+      return '';
+    }
+  };
+
+
+	LodLive.prototype.format = function(destBox, values, uris, inverses) {
+    var inst = this, classMap = inst.classMap, lodLiveProfile = inst.options;
+
+		if (inst.debugOn) {
+			start = new Date().getTime();
+		}
+		var containerBox = destBox.parent('div');
+		var thisUri = containerBox.attr('rel') || '';
+
+		// recupero il doctype per caricare le configurazioni specifiche
+		var docType = inst.getJsonValue(uris, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'default');
+		if (thisUri.indexOf("~~") != -1) {
+			docType = 'bnode';
+		}
+		// carico le configurazioni relative allo stile
+		var aClass = inst.getProperty("document", "className", docType);
+		if (docType == 'bnode') {
+			aClass = 'bnode';
+		}
+
+		// destBox.addClass(aClass);
+		if (aClass == null || aClass == 'standard' || aClass == '') {
+			if (classMap[docType]) {
+				aClass = classMap[docType];
+			} else {
+
+        aClass = 'box' + classMap.counter;
+        //FIXME: this is strange, why manually keeping a counter?
+        //FIXME:  13 is a magic number, why?
+				if (classMap.counter === 13) {
+					classMap.counter = 1;
+				} else {
+					classMap.counter += 1;
+				}
+				classMap[docType] = aClass;
+			}
+		}
+		containerBox.addClass(aClass);
+		// ed ai path da mostrare nel titolo del box
+		var titles = inst.getProperty("document", "titleProperties", docType);
+		// ed ai path degli oggetti di tipo immagine
+		var images = inst.getProperty("images", "properties", docType);
+		// ed ai path dei link esterni
+		var weblinks = inst.getProperty("weblinks", "properties", docType);
+		// e le latitudini
+		var lats = inst.getProperty("maps", "lats", docType);
+		// e le longitudini
+		var longs = inst.getProperty("maps", "longs", docType);
+		// e punti
+		var points = inst.getProperty("maps", "points", docType);
+
+		// se la proprieta' e' stata scritta come stringa la trasformo in un
+		// array
+		if ( typeof titles === 'string') {
+			titles = [titles];
+		}
+		if ( typeof images === 'string') {
+			images = [images];
+		}
+		if ( typeof weblinks === 'string') {
+			weblinks = [weblinks];
+		}
+		if ( typeof lats === 'string') {
+			lats = [lats];
+		}
+		if ( typeof longs === 'string') {
+			longs = [longs];
+		}
+		if ( typeof points === 'string') {
+			points = [points];
+		}
+
+		// gestisco l'inserimento di messaggi di sistema come errori o altro
+		titles.push('http://system/msg');
+
+		// aggiungo al box il titolo
+		var result = "<div class=\"boxTitle\"><span class=\"ellipsis_text\">";
+		for (var a = 0; a < titles.length; a++) {
+			var resultArray = inst.getJsonValue(values, titles[a], titles[a].indexOf('http') == 0 ? '' : titles[a]);
+			if (titles[a].indexOf('http') != 0) {
+				if (result.indexOf($.trim(unescape(titles[a])) + " \n") == -1) {
+					result += $.trim(unescape(titles[a])) + " \n";
+				}
+			} else {
+				for (var af = 0; af < resultArray.length; af++) {
+					if (result.indexOf(unescape(resultArray[af]) + " \n") == -1) {
+						result += unescape(resultArray[af]) + " \n";
+					}
+				}
+			}
+
+		}
+    var dataEndpoint = containerBox.attr("data-endpoint") || '';
+		if ((values.length == 0 && uris.length == 0) || dataEndpoint.indexOf("http://system/dummy") == 0) {
+			if (containerBox.attr("data-endpoint").indexOf("http://system/dummy") != -1) {
+				containerBox.attr("data-endpoint", LodLiveUtils.lang('endpointNotConfigured'));
+			}
+			if (uris.length == 0 && values.length == 0) {
+				result = "<div class=\"boxTitle\" data-tooltip=\"" + LodLiveUtils.lang('resourceMissing') + "\"><a target=\"_blank\" href=\"" + thisUri + "\"><span class=\"spriteLegenda\"></span>" + thisUri + "</a>";
+			}
+		}
+		result += "</span></div>";
+		var jResult = $(result);
+		if (jResult.text() == '' && docType == 'bnode') {
+			jResult.text('[blank node]');
+		} else if (jResult.text() == '') {
+			jResult.text(LodLiveUtils.lang('noName'));
+		}
+		destBox.append(jResult);
+		var resourceTitle = jResult.text();
+    jResult.data('tooltip', resourceTitle);
+
+		destBox.hover(function() {
+        var msgTitle = jResult.text();
+        console.log('destbox hover title', msgTitle);
+			inst.msg(msgTitle, 'show', 'fullInfo', containerBox.attr("data-endpoint"));
+		}, function() {
+			inst.msg(null, 'hide');
+		});
+
+		// calcolo le uri e le url dei documenti correlati
+		var connectedDocs = [];
+		var invertedDocs = [];
+		var propertyGroup = {};
+		var propertyGroupInverted = {};
+
+		var connectedImages = [];
+		var connectedLongs = [];
+		var connectedLats = [];
+
+		var sameDocControl = [];
+		$.each(uris, function(key, value) {
+			for (var akey in value) {
+
+				// escludo la definizione della classe, le proprieta'
+				// relative alle immagini ed ai link web
+				if (lodLiveProfile.uriSubstitutor) {
+					$.each(lodLiveProfile.uriSubstitutor, function(skey, svalue) {
+						value[akey] = value[akey].replace(svalue.findStr, svalue.replaceStr);
+					});
+				}
+				if ($.inArray(akey, images) > -1) {
+          //FIXME: replace eval
+					eval('connectedImages.push({\'' + value[akey] + '\':\'' + escape(resourceTitle) + '\'})');
+
+				} else if ($.inArray(akey, weblinks) == -1) {
+
+					// controllo se trovo la stessa relazione in una
+					// proprieta' diversa
+					if ($.inArray(value[akey], sameDocControl) > -1) {
+
+						var aCounter = 0;
+						$.each(connectedDocs, function(key2, value2) {
+							for (var akey2 in value2) {
+								if (value2[akey2] == value[akey]) {
+									eval('connectedDocs[' + aCounter + '] = {\'' + akey2 + ' | ' + akey + '\':\'' + value[akey] + '\'}');
+								}
+							}
+							aCounter++;
+						});
+
+					} else {
+            //FIXME: replace eval
+						eval('connectedDocs.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+						sameDocControl.push(value[akey]);
+					}
+
+				}
+			}
+
+		});
+
+		if (inverses) {
+			sameDocControl = [];
+			$.each(inverses, function(key, value) {
+				for (var akey in value) {
+					if (docType == 'bnode' && value[akey].indexOf("~~") != -1) {
+						continue;
+					}
+					if (lodLiveProfile.uriSubstitutor) {
+						$.each(lodLiveProfile.uriSubstitutor, function(skey, svalue) {
+							value[akey] = value[akey].replace(escape(svalue.findStr), escape(svalue.replaceStr));
+						});
+					}
+					// controllo se trovo la stessa relazione in una
+					// proprieta' diversa
+					if ($.inArray(value[akey], sameDocControl) > -1) {
+						var aCounter = 0;
+						$.each(invertedDocs, function(key2, value2) {
+							for (var akey2 in value2) {
+								if (value2[akey2] == value[akey]) {
+									var theKey = akey2;
+									if (akey2 != akey) {
+										theKey = akey2 + ' | ' + akey;
+									}
+									eval('invertedDocs[' + aCounter + '] = {\'' + theKey + '\':\'' + value[akey] + '\'}');
+									return false;
+								}
+							}
+							aCounter++;
+						});
+					} else {
+						eval('invertedDocs.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+						sameDocControl.push(value[akey]);
+					}
+
+				}
+			});
+		}
+		if (inst.doDrawMap) {
+			for (var a = 0; a < points.length; a++) {
+				var resultArray = inst.getJsonValue(values, points[a], points[a]);
+				for (var af = 0; af < resultArray.length; af++) {
+					if (resultArray[af].indexOf(" ") != -1) {
+						eval('connectedLongs.push(\'' + unescape(resultArray[af].split(" ")[1]) + '\')');
+						eval('connectedLats.push(\'' + unescape(resultArray[af].split(" ")[0]) + '\')');
+					} else if (resultArray[af].indexOf("-") != -1) {
+						eval('connectedLongs.push(\'' + unescape(resultArray[af].split("-")[1]) + '\')');
+						eval('connectedLats.push(\'' + unescape(resultArray[af].split("-")[0]) + '\')');
+					}
+				}
+			}
+			for (var a = 0; a < longs.length; a++) {
+				var resultArray = inst.getJsonValue(values, longs[a], longs[a]);
+				for (var af = 0; af < resultArray.length; af++) {
+					eval('connectedLongs.push(\'' + unescape(resultArray[af]) + '\')');
+				}
+			}
+			for (var a = 0; a < lats.length; a++) {
+				var resultArray = inst.getJsonValue(values, lats[a], lats[a]);
+				for (var af = 0; af < resultArray.length; af++) {
+					eval('connectedLats.push(\'' + unescape(resultArray[af]) + '\')');
+				}
+			}
+
+			if (connectedLongs.length > 0 && connectedLats.length > 0) {
+				var mapsMap = inst.mapsMap;
+				mapsMap[containerBox.attr("id")] = {
+					longs : connectedLongs[0],
+					lats : connectedLats[0],
+					title : thisUri + "\n" + escape(resourceTitle)
+				};
+				inst.updateMapPanel(inst.context.find('.lodlive-controlPanel'));
+			}
+		}
+		if (inst.doCollectImages) {
+			if (connectedImages.length > 0) {
+				var imagesMap = inst.imagesMap;
+				imagesMap[containerBox.attr("id")] = connectedImages;
+				inst.updateImagePanel(inst.context.find('.lodlive-controlPanel'));
+			}
+		}
+		var totRelated = connectedDocs.length + invertedDocs.length;
+
+		// se le proprieta' da mostrare sono troppe cerco di accorpare
+		// quelle uguali
+		if (totRelated > 16) {
+			$.each(connectedDocs, function(key, value) {
+				for (var akey in value) {
+					if (propertyGroup[akey]) {
+						var t = propertyGroup[akey];
+						t.push(value[akey]);
+						propertyGroup[akey] = t;
+					} else {
+						propertyGroup[akey] = [value[akey]];
+					}
+				}
+			});
+			$.each(invertedDocs, function(key, value) {
+				for (var akey in value) {
+					if (propertyGroupInverted[akey]) {
+						var t = propertyGroupInverted[akey];
+						t.push(value[akey]);
+						propertyGroupInverted[akey] = t;
+					} else {
+						propertyGroupInverted[akey] = [value[akey]];
+					}
+				}
+			});
+			totRelated = 0;
+			for (var prop in propertyGroup) {
+				if (propertyGroup.hasOwnProperty(prop)) {
+					totRelated++;
+				}
+			}
+			for (var prop in propertyGroupInverted) {
+				if (propertyGroupInverted.hasOwnProperty(prop)) {
+					totRelated++;
+				}
+			}
+		}
+
+		// calcolo le parti in cui dividere il cerchio per posizionare i
+		// link
+		// var chordsList = this.lodlive('circleChords',
+		// destBox.width() / 2 + 12, ((totRelated > 1 ? totRelated - 1 :
+		// totRelated) * 2) + 4, destBox.position().left + destBox.width() /
+		// 2, destBox.position().top + destBox.height() / 2, totRelated +
+		// 4);
+    //
+		var chordsList = inst.circleChords(75, 24, destBox.position().left + 65, destBox.position().top + 65);
+		var chordsListGrouped = inst.circleChords(95, 36, destBox.position().left + 65, destBox.position().top + 65);
+		// aggiungo al box i link ai documenti correlati
+		var a = 1;
+		var inserted = {};
+		var counter = 0;
+		var innerCounter = 1;
+
+		var objectList = [];
+		var innerObjectList = [];
+		$.each(connectedDocs, function(key, value) {
+			if (counter == 16) {
+				counter = 0;
+			}
+			if (a == 1) {
+			} else if (a == 15) {
+				a = 1;
+			}
+			for (var akey in value) {
+				var obj = null;
+				if (propertyGroup[akey] && propertyGroup[akey].length > 1) {
+					if (!inserted[akey]) {
+						innerCounter = 1;
+						inserted[akey] = true;
+						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						// containerBox.append(objBox);
+						var akeyArray = akey.split(" ");
+						if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
+							objBox.addClass('isBnode');
+						} else {
+							for (var i = 0; i < akeyArray.length; i++) {
+								if (lodLiveProfile.arrows[akeyArray[i]]) {
+									objBox.addClass(lodLiveProfile.arrows[akeyArray[i]]);
+								}
+							}
+						}
+						objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
+						objectList.push(objBox);
+						// containerBox.append('<div data-circlePos="' + a +
+						// '" class="showGroupedRelated ' + MD5(akey) +
+						// '"></div>');
+						a++;
+						counter++;
+					}
+					// var alredyInserted = $('.relatedBox',
+					// containerBox).length;
+					// if (alredyInserted <
+					// document.lodliveVars['relationsLimit']) {
+					if (innerCounter < 25) {
+						obj = $("<div class=\"aGrouped relatedBox " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
+						// containerBox.append(obj);
+						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
+						obj.attr("data-circlePos", innerCounter);
+						obj.attr("data-circleParts", 36);
+						obj.attr("data-circleid", containerBox.attr('id'));
+					}
+					/*
+					 * } else if (alredyInserted ==
+					 * document.lodliveVars['relationsLimit']) { $('.' +
+					 * MD5(akey), containerBox).append('<span
+					 * class="relatedBox" title="altri elementi">[...]</span>'); }
+					 */
+					innerCounter++;
+				} else {
+					obj = $("<div class=\"relatedBox " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
+					// containerBox.append(obj);
+					obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
+					obj.attr("data-circlePos", a);
+					obj.attr("data-circleParts", 24);
+					a++;
+					counter++;
+				}
+				if (obj) {
+					obj.attr("data-circleid", containerBox.attr('id'));
+					obj.attr("data-property", akey);
+					// se si tratta di un  Bnode applico una classe diversa
+					var akeyArray = akey.split(" ");
+					if (obj.attr('rel').indexOf('~~') != -1) {
+						obj.addClass('isBnode');
+					} else {
+						for (var i = 0; i < akeyArray.length; i++) {
+							if (lodLiveProfile.arrows[akeyArray[i]]) {
+								obj.addClass(lodLiveProfile.arrows[akeyArray[i]]);
+							}
+						}
+					}
+					if (obj.hasClass("aGrouped")) {
+						innerObjectList.push(obj);
+					} else {
+						objectList.push(obj);
+					}
+				}
+			}
+
+		});
+
+		inserted = {};
+		$.each(invertedDocs, function(key, value) {
+			if (counter == 16) {
+				counter = 0;
+			}
+			if (a == 1) {
+			} else if (a == 15) {
+				a = 1;
+			}
+			for (var akey in value) {
+				var obj = null;
+				if (propertyGroupInverted[akey] && propertyGroupInverted[akey].length > 1) {
+					if (!inserted[akey]) {
+						innerCounter = 1;
+						inserted[akey] = true;
+						// var objBox = $("<div class=\"groupedRelatedBox
+						// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
+						// akey + "\" >" + (propertyGroup[akey].length) +
+						// "</div>");
+						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						// containerBox.append(objBox);
+						var akeyArray = akey.split(" ");
+						if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
+							objBox.addClass('isBnode');
+						} else {
+							for (var i = 0; i < akeyArray.length; i++) {
+								if (lodLiveProfile.arrows[akeyArray[i]]) {
+									objBox.addClass(lodLiveProfile.arrows[akeyArray[i]]);
+								}
+							}
+						}
+						objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
+						// containerBox.append('<div data-circlePos="' + a +
+						// '" class="showGroupedRelated ' + MD5(akey) +
+						// '"></div>');
+						objectList.push(objBox);
+						a++;
+						counter++;
+					}
+					// var alredyInserted = $('.relatedBox',
+					// containerBox).length;
+					// if (alredyInserted <
+					// document.lodliveVars['relationsLimit']) {
+					if (innerCounter < 25) {
+						var destUri = unescape(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
+						obj = $("<div class=\"aGrouped relatedBox inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
+						// containerBox.append(obj);
+						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
+						obj.attr("data-circlePos", innerCounter);
+						obj.attr("data-circleParts", 36);
+						obj.attr("data-circleId", containerBox.attr('id'));
+					}
+					/*
+					 * } else if (alredyInserted ==
+					 * document.lodliveVars['relationsLimit']) { $('.' +
+					 * MD5(akey), containerBox).append('<span
+					 * class="relatedBox" title="altri elementi">[...]</span>'); }
+					 */
+					innerCounter++;
+				} else {
+					obj = $("<div class=\"relatedBox inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
+					// containerBox.append(obj);
+					obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
+					obj.attr("data-circlePos", a);
+					obj.attr("data-circleParts", 24);
+					a++;
+					counter++;
+				}
+				if (obj) {
+					obj.attr("data-circleId", containerBox.attr('id'));
+					obj.attr("data-property", akey);
+					// se si tratta di un sameas applico una classe diversa
+					var akeyArray = akey.split(" ");
+
+					if (obj.attr('rel').indexOf('~~') != -1) {
+						obj.addClass('isBnode');
+					} else {
+						for (var i = 0; i < akeyArray.length; i++) {
+							if (lodLiveProfile.arrows[akeyArray[i]]) {
+								obj.addClass(lodLiveProfile.arrows[akeyArray[i]]);
+							}
+						}
+					}
+
+					if (obj.hasClass("aGrouped")) {
+						innerObjectList.push(obj);
+					} else {
+						objectList.push(obj);
+					}
+				}
+			}
+
+		});
+		var page = 0;
+		var totPages = objectList.length > 14 ? (objectList.length / 14 + (objectList.length % 14 > 0 ? 1 : 0)) : 1;
+		for (var i = 0; i < objectList.length; i++) {
+			if (i % 14 == 0) {
+				page++;
+				var aPage = $('<div class="page page' + page + '" style="display:none"></div>');
+				if (page > 1 && totPages > 1) {
+					aPage.append("<div class=\"pager pagePrev sprite\" data-page=\"page" + (page - 1) + "\" style=\"top:" + (chordsList[0][1] - 8) + "px;left:" + (chordsList[0][0] - 8) + "px\"></div>");
+				}
+				if (totPages > 1 && page < totPages - 1) {
+					aPage.append("<div class=\"pager pageNext sprite\" data-page=\"page" + (page + 1) + "\" style=\"top:" + (chordsList[15][1] - 8) + "px;left:" + (chordsList[15][0] - 8) + "px\"></div>");
+				}
+				containerBox.append(aPage);
+			}
+			containerBox.children('.page' + page).append(objectList[i]);
+		}
+		page = 0;
+		totPages = innerObjectList.length / 24 + (innerObjectList.length % 24 > 0 ? 1 : 0);
+		if (innerObjectList.length > 0) {
+			containerBox.append('<div class="innerPage"></div>');
+			for (var i = 0; i < innerObjectList.length; i++) {
+				containerBox.children('.innerPage').append(innerObjectList[i]);
+			}
+		}
+		containerBox.children('.page1').fadeIn('fast');
+		containerBox.children('.page').children('.pager').click(function() {
+			var pager = $(this);
+			containerBox.find('.lastClick').removeClass('lastClick').click();
+			pager.parent().fadeOut('fast', null, function() {
+				$(this).parent().children('.' + pager.attr("data-page")).fadeIn('fast');
+			});
+		}); {
+			var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  ><span class=\"fa fa-list\"></span></div>");
+			containerBox.append(obj);
+			obj.hover(function() {
+				$(this).parent().children('.box').setBackgroundPosition({
+					y : -260
+				});
+			}, function() {
+				$(this).parent().children('.box').setBackgroundPosition({
+					y : 0
+				});
+			});
+			obj = $('<div class="actionBox tools" rel="tools" ><span class="fa fa-cog"></span></div>');
+			containerBox.append(obj);
+			obj.hover(function() {
+				containerBox.children('.box').setBackgroundPosition({
+					y : -130
+				});
+			}, function() {
+				containerBox.children('.box').setBackgroundPosition({
+					y : 0
+				});
+			});
+		}
+		if (inst.debugOn) {
+			console.debug((new Date().getTime() - start) + '	format ');
+		}
+	};
+
+  LodLive.prototype.openDoc = function(anUri, destBox, fromInverse) {
+    var inst = this;
+
+    if (!anUri) { 
+      $.error('LodLive: no uri for openDoc');
+    }
+
+		if (inst.debugOn) {
+			start = new Date().getTime();
+		}
+
+		var uris = [];
+		var values = [];
+		if (inst.showInfoConsole) {
+			inst.queryConsole('init', {
+				uriId : anUri
+			});
+			inst.queryConsole('log', {
+				uriId : anUri,
+				resource : anUri
+			});
+		}
+
+    if (inst.debugOn) console.log('composing query with anUri', anUri);
+    //TODO: composeQuery looks like a static function, look into it
+		var SPARQLquery = inst.composeQuery(anUri, 'documentUri');
+
+		if (inst.doStats) {
+			methods.doStats(anUri);
+		}
+
+		if (SPARQLquery.indexOf("endpoint=") != -1) {
+
+			var endpoint = SPARQLquery.substring(SPARQLquery.indexOf("endpoint=") + 9);
+			endpoint = endpoint.substring(0, endpoint.indexOf("&"));
+			destBox.attr("data-endpoint", endpoint);
+
+		} else {
+
+			destBox.attr("data-endpoint", SPARQLquery.substring(0, SPARQLquery.indexOf("?")));
+
+		}
+    //TODO: is system/dummy just a flag that it should guess? If so, maybe just set a property on the query object called shouldGuess = true
+		if (SPARQLquery.indexOf("http://system/dummy") == 0) {
+
+			// guessing endpoint from URI
+			inst.guessingEndpoint(anUri, function() {
+
+				inst.openDoc(anUri, destBox, fromInverse);
+
+			}, function() {
+
+				inst.parseRawResource(destBox, anUri, fromInverse);
+
+			});
+
+		} else {
+
+      //TODO: remove jQuery jsonp dependency
+			$.ajax({
+				url : SPARQLquery,
+				beforeSend : function() {
+					destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
+				},
+				success : function(json) {
+          // console.log('sparql success', json);
+					json = json.results && json.results.bindings;
+					var conta = 0;
+					$.each(json, function(key, value) {
+            var newVal = {}, newUri = {};
+            conta++;
+						if (value.object.type === 'uri' || value.object.type === 'bnode') {
+							if (value.object.value != anUri && (value.object.type !== 'bnode' || !inst.ignoreBnodes)) {
+                newUri[value.property.value] = (value.object.type === 'bnode') ? escape(anUri + '~~' + value.object.value) : escape(value.object.value);
+                uris.push(newUri);
+							}
+						} else {
+              newVal[value.property.value] = escape(value.object.value);
+              values.push(newVal);
+						}
+
+					});
+					if (inst.showInfoConsole) {
+						inst.queryConsole('log', {
+							founded : conta,
+							id : SPARQLquery,
+							uriId : anUri
+						});
+					}
+					if (inst.debugOn) {
+						console.debug((new Date().getTime() - start) + '	openDoc eval uris & values');
+					}
+					destBox.children('.box').html('');
+					if (inst.doInverse) {
+						SPARQLquery = inst.composeQuery(anUri, 'inverse');
+
+						var inverses = [];
+            //FIXME: remove jQuery.jsonp dependency
+						$.ajax({
+							url : SPARQLquery,
+							beforeSend : function() {
+								destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 5) + 'px\" src="img/ajax-loader.gif"/>');
+							},
+							success : function(json) {
+								json = json['results']['bindings'];
+								var conta = 0;
+								$.each(json, function(key, value) {
+									conta++;
+                  //TODO: replace evals
+									eval('inverses.push({\'' + value['property']['value'] + '\':\'' + (value.object.type == 'bnode' ? anUri + '~~' : '') + escape(value.object.value) + '\'})');
+								});
+
+								if (inst.showInfoConsole) {
+
+									inst.queryConsole('log', {
+										founded : conta,
+										id : SPARQLquery,
+										uriId : anUri
+									});
+
+								}
+
+								if (inst.debugOn) {
+									console.debug((new Date().getTime() - start) + '	openDoc inverse eval uris ');
+								}
+
+								var callback = function() {
+									destBox.children('.box').html('');
+									inst.format(destBox.children('.box'), values, uris, inverses);
+									inst.addClick(destBox, fromInverse ? function() {
+                    //TODO: dynamic selector across the entire doc here seems strange, what are the the possibilities?  Is it only a DOM element?
+										try {
+                      //TODO: find out if we only pass jquery objects in as fromInverse, no need to wrap it again
+											$(fromInverse).click();
+										} catch (e) {
+										}
+									} : null);
+									if (inst.doAutoExpand) {
+										inst.autoExpand(destBox);
+									}
+								};
+
+								if (inst.doAutoSameas) {
+									var counter = 0;
+									var tot = Object.keys(lodLiveProfile).length;
+									inst.findInverseSameAs(anUri, counter, inverses, callback, tot);
+								} else {
+									callback();
+								}
+
+							},
+							error : function(e, b, v) {
+								destBox.children('.box').html('');
+								inst.format(destBox.children('.box'), values, uris);
+								if (inst.showInfoConsole) {
+									inst.queryConsole('log', {
+										error : 'error',
+										id : SPARQLquery,
+										uriId : anUri
+									});
+								}
+								inst.addClick(destBox, fromInverse ? function() {
+									try {
+										$(fromInverse).click();
+									} catch (e) {
+									}
+								} : null);
+								if (inst.doAutoExpand) {
+									inst.autoExpand(destBox);
+								}
+							}
+						});
+					} else {
+						inst.format(destBox.children('.box'), values, uris);
+						inst.addClick(destBox, fromInverse ? function() {
+							try {
+								$(fromInverse).click();
+							} catch (e) {
+							}
+						} : null);
+						if (inst.doAutoExpand) {
+							inst.autoExpand(destBox);
+						}
+					}
+				},
+				error : function(e, b, v) {
+					inst.errorBox(destBox);
+				}
+			});
+
+		}
+		if (inst.debugOn) {
+			console.debug((new Date().getTime() - start) + '	openDoc');
+		}
+	};
+
+  LodLive.prototype.parseRawResource = function(destBox, resource, fromInverse) {
+
+    var inst = this, values = [], uris = [], lodLiveProfile = inst.options;
+
+    if (lodLiveProfile['default']) {
+      // attivo lo sparql interno basato su sesame
+      var res = LodLiveUtils.getSparqlConf('documentUri', lodLiveProfile['default'], lodLiveProfile).replace(/\{URI\}/ig, resource);
+      var url = lodLiveProfile['default'].endpoint + "?uri=" + encodeURIComponent(resource) + "&query=" + encodeURIComponent(res);
+      if (inst.showInfoConsole) {
+        inst.queryConsole('log', {
+          title : LodLiveUtils.lang('endpointNotConfiguredSoInternal'),
+          text : res,
+          uriId : resource
+        });
+      }
+      $.ajax({
+        url : url,
+        beforeSend : function() {
+          destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
+        },
+        success : function(json) {
+          json = json['results']['bindings'];
+          var conta = 0;
+          $.each(json, function(key, value) {
+            conta++;
+            //TODO: replace eval
+            if (value.object.type == 'uri') {
+              if (value.object.value != resource) {
+                eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+              }
+            } else {
+              eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+            }
+          });
+
+          if (inst.debugOn) {
+            console.debug((new Date().getTime() - start) + '  openDoc eval uris & values');
+          }
+
+          var inverses = [];
+          //FIXME:  here is a callback function, debug to see if it can simply wait for returns because I haven't noticed anything async in the chain
+          var callback = function() {
+            destBox.children('.box').html('');
+            inst.format(destBox.children('.box'), values, uris, inverses);
+            inst.addClick(destBox, fromInverse ? function() {
+              try {
+                $(fromInverse).click();
+              } catch (e) {
+              }
+            } : null);
+
+            if (inst.doAutoExpand) {
+              inst.autoExpand(destBox);
+            }
+          };
+          if (inst.doAutoSameas) {
+            var counter = 0;
+            var tot = Object.keys(lodLiveProfile.connection).length;
+            inst.findInverseSameAs(resource, counter, inverses, callback, tot);
+          } else {
+            callback();
+          }
+
+        },
+        error : function(e, j, k) {
+          // console.debug(e);console.debug(j);
+          destBox.children('.box').html('');
+          var inverses = [];
+          if (fromInverse) {
+            eval('uris.push({\'' + fromInverse.replace(/div\[data-property="([^"]*)"\].*/, '$1') + '\':\'' + fromInverse.replace(/.*\[rel="([^"]*)"\].*/, '$1') + '\'})');
+          }
+          inst.format(destBox.children('.box'), values, uris, inverses);
+          inst.addClick(destBox, fromInverse ? function() {
+            try {
+              $(fromInverse).click();
+            } catch (e) {
+            }
+          } : null);
+          if (inst.doAutoExpand) {
+            inst.autoExpand(destBox);
+          }
+        }
+      });
+
+    } else {
+
+      destBox.children('.box').html('');
+      var inverses = [];
+      if (fromInverse) {
+        eval('uris.push({\'' + fromInverse.replace(/div\[data-property="([^"]*)"\].*/, '$1') + '\':\'' + fromInverse.replace(/.*\[rel="([^"]*)"\].*/, '$1') + '\'})');
+      }
+      inst.format(destBox.children('.box'), values, uris, inverses);
+      inst.addClick(destBox, fromInverse ? function() {
+        try {
+          $(fromInverse).click();
+        } catch (e) {
+        }
+      } : null);
+      if (inst.doAutoExpand) {
+        inst.autoExpand(destBox);
+      }
+    }
+  };
+
+  LodLive.prototype.errorBox = function(destBox) {
+    var inst = this;
+
+    destBox.children('.box').addClass("errorBox");
+    destBox.children('.box').html('');
+    var jResult = $("<div class=\"boxTitle\"><span>" + LodLiveUtils.lang('enpointNotAvailable') + "</span></div>");
+    destBox.children('.box').append(jResult);
+    var obj = $("<div class=\"actionBox tools\">&#160;</div>");
+    obj.click(function() {
+      inst.removeDoc(destBox);
+    });
+    destBox.append(obj);
+    destBox.children('.box').hover(function() {
+      inst.msg(LodLiveUtils.lang('enpointNotAvailableOrSLow'), 'show', 'fullInfo', destBox.attr("data-endpoint"));
+    }, function() {
+      inst.msg(null, 'hide');
+    });
+
+  };
+
+  LodLive.prototype.allClasses = function(SPARQLquery, destBox, destSelect, template) {
+    var inst = this;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    //TODO: if composeQuery is a static utility function then this can be as well
+    SPARQLquery = inst.composeQuery(SPARQLquery, 'allClasses');
+    var classes = [];
+    $.ajax({
+      url : SPARQLquery,
+      beforeSend : function() {
+        destBox.html('<img src="img/ajax-loader.gif"/>');
+      },
+      success : function(json) {
+        destBox.html(LodLiveUtils.lang('choose'));
+        json = json.results && json.results.bindings;
+        $.each(json, function(key, value) {
+          var aclass = json[key].object.value;
+          if (aclass.indexOf('http://www.openlinksw.com/') == -1) {
+            aclass = aclass.replace(/http:\/\//, "");
+            classes.push(aclass);
+          }
+
+        });
+        for (var i = 0; i < classes.length; i++) {
+          destSelect.append(template.replace(/\{CONTENT\}/g, classes[i]));
+        }
+      },
+      error : function(e, b, v) {
+        destSelect.append(template.replace(/\{CONTENT\}/g, 'si Ã¨ verificato un errore'));
+      }
+    });
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  allClasses');
+    }
+  };
+
+  LodLive.prototype.findInverseSameAs = function(anUri, counter, inverse, callback, tot) {
+    var inst = this, lodLiveProfile = inst.options;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+    var innerCounter = 0;
+    $.each(lodLiveProfile.connection, function(key, value) {
+      // what is the intent of matching the counter to the argument?  Are we trying to simulate numerical index of object properties when order is not guaranteed? Why not by name?
+      if (innerCounter === counter) {
+        var skip = false;
+        var keySplit = key.split(",");
+        if (!value.useForInverseSameAs) {
+          skip = true;
+        } else {
+          for (var a = 0; a < keySplit.length; a++) {
+            // salto i sameas interni allo stesso endpoint
+            if (anUri.indexOf(keySplit[a]) != -1) {
+              skip = true;
+            }
+          }
+        }
+        if (skip) {
+          counter++;
+          if (counter < tot) {
+            inst.findInverseSameAs(anUri, counter, inverse, callback, tot);
+          } else {
+            callback();
+          }
+          return false;
+        }
+
+        var SPARQLquery = value.endpoint + "?" + (value.endpointType ? lodLiveProfile.endpoints[value.endpointType] : lodLiveProfile.endpoints.all) + "&query=" + escape(LodLiveUtils.getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
+        if (value.proxy) {
+          SPARQLquery = value.proxy + '?endpoint=' + value.endpoint + "&" + (value.endpointType ? lodLiveProfile.endpoints[value.endpointType] : lodLiveProfile.endpoints.all) + "&query=" + escape(LodLiveUtils.getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
+        }
+
+        $.ajax({
+          url : SPARQLquery,
+          timeout : 3000,
+          beforeSend : function() {
+            if (inst.showInfoConsole) {
+              inst.queryConsole('log', {
+                title : value.endpoint,
+                text : LodLiveUtils.getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri),
+                id : SPARQLquery,
+                uriId : anUri
+              });
+            }
+          },
+          success : function(json) {
+            json = json['results']['bindings'];
+            var conta = 0;
+            $.each(json, function(key, value) {
+              conta++;
+              if (value.property && value.property.value) {
+                eval('inverse.splice(1,0,{\'' + value.property.value + '\':\'' + escape(value.object.value) + '\'})');
+              } else {
+                eval('inverse.splice(1,0,{\'' + 'http://www.w3.org/2002/07/owl#sameAs' + '\':\'' + escape(value.object.value) + '\'})');
+              }
+            });
+            if (inst.showInfoConsole) {
+              inst.queryConsole('log', {
+                founded : conta,
+                id : SPARQLquery,
+                uriId : anUri
+              });
+            }
+            counter++;
+            //TODO:  why callbacks and not just return?
+            if (counter < tot) {
+              inst.findInverseSameAs(anUri, counter, inverse, callback, tot);
+            } else {
+              callback();
+            }
+          },
+
+          error : function(e, b, v) {
+
+            if (inst.showInfoConsole) {
+              inst.queryConsole('log', {
+                error : 'error',
+                id : SPARQLquery,
+                uriId : anUri
+              });
+            }
+            counter++;
+            if (counter < tot) {
+              inst.findInverseSameAs(anUri, counter, inverse, callback, tot);
+            } else {
+              callback();
+            }
+          }
+        });
+        if (inst.debugOn) {
+          console.debug((new Date().getTime() - start) + '  findInverseSameAs ' + value.endpoint);
+        }
+      }
+      innerCounter++;
+    });
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  findInverseSameAs');
+    }
+  };
+
+  /** Find the subject
+    */
+  LodLive.prototype.findSubject = function(SPARQLquery, selectedClass, selectedValue, destBox, destInput) {
+    var inst = this, lodLiveProfile = inst.options;
+
+    if (inst.debugOn) {
+      start = new Date().getTime();
+    }
+
+    $.each(lodLiveProfile.connection, function(key, value) {
+
+      var keySplit = key.split(",");
+      for (var a = 0; a < keySplit.length; a++) {
+        if (SPARQLquery.indexOf(keySplit[a]) != -1) {
+          SPARQLquery = value.endpoint + "?" + (value.endpointType ? lodLiveProfile.endpoints[value.endpointType] : lodLiveProfile.endpoints.all) + "&query=" + escape(LodLiveUtils.getSparqlConf('findSubject', value, lodLiveProfile).replace(/\{CLASS\}/g, selectedClass).replace(/\{VALUE\}/g, selectedValue));
+          if (value.proxy) {
+            SPARQLquery = value.proxy + "?endpoint=" + value.endpoint + "&" + (value.endpointType ? lodLiveProfile.endpoints[value.endpointType] : lodLiveProfile.endpoints.all) + "&query=" + escape(LodLiveUtils.getSparqlConf('findSubject', value, lodLiveProfile).replace(/\{CLASS\}/g, selectedClass).replace(/\{VALUE\}/g, selectedValue));
+          }
+        }
+      }
+
+    });
+
+    var values = [];
+    //TODO: emlinate the jQuery jsonp dependency
+    $.ajax({
+      url : SPARQLquery,
+      beforeSend : function() {
+        destBox.html('<img src="img/ajax-loader.gif"/>');
+      },
+      success : function(json) {
+        destBox.html('');
+        json = json.results && json.results.bindings;
+        $.each(json, function(key, value) {
+          values.push(json[key].subject.value);
+        });
+        for (var i = 0; i < values.length; i++) {
+          destInput.val(values[i]);
+        }
+      },
+      error : function(e, b, v) {
+        destBox.html('errore: ' + e);
+      }
+    });
+
+    if (inst.debugOn) {
+      console.debug((new Date().getTime() - start) + '  findSubject');
+    }
+  };
+
+  //TODO: these line drawing methods don't care about the instance, they should live somewhere else
+  LodLive.prototype.standardLine = function(label, x1, y1, x2, y2, canvas, toId) {
+
+    // eseguo i calcoli e scrivo la riga di connessione tra i cerchi
+    var lineangle = (Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI) + 180;
+    var x2bis = x1 - Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) + 60;
+    //canvas.detectPixelRatio();
+    canvas.rotateCanvas({
+      rotate : lineangle,
+      x : x1,
+      y : y1
+    }).drawLine({
+      strokeStyle : "#fff",
+      strokeWidth : 1,
+      strokeCap : 'bevel',
+      x1 : x1 - 60,
+      y1 : y1,
+      x2 : x2bis,
+      y2 : y1
+    });
+
+    if (lineangle > 90 && lineangle < 270) {
+      canvas.rotateCanvas({
+        rotate : 180,
+        x : (x2bis + x1) / 2,
+        y : (y1 + y1) / 2
+      });
+    }
+    label = $.trim(label).replace(/\n/g, ', ');
+    canvas.drawText({// inserisco l'etichetta
+      fillStyle : "#606060",
+      strokeStyle : "#606060",
+      x : (x2bis + x1 + ((x1 + 60) > x2 ? -60 : +60)) / 2,
+      y : (y1 + y1 - ((x1 + 60) > x2 ? 18 : -18)) / 2,
+      text : label ,
+      align : "center",
+      strokeWidth : 0.01,
+      fontSize : 11,
+      fontFamily : "'Open Sans',Verdana"
+    }).restoreCanvas().restoreCanvas();
+    //TODO:  why is this called twice?
+
+    // ed inserisco la freccia per determinarne il verso della
+    // relazione
+    lineangle = Math.atan2(y2 - y1, x2 - x1);
+    var angle = 0.79;
+    var h = Math.abs(8 / Math.cos(angle));
+    var fromx = x2 - 60 * Math.cos(lineangle);
+    var fromy = y2 - 60 * Math.sin(lineangle);
+    var angle1 = lineangle + Math.PI + angle;
+    var topx = (x2 + Math.cos(angle1) * h) - 60 * Math.cos(lineangle);
+    var topy = (y2 + Math.sin(angle1) * h) - 60 * Math.sin(lineangle);
+    var angle2 = lineangle + Math.PI - angle;
+    var botx = (x2 + Math.cos(angle2) * h) - 60 * Math.cos(lineangle);
+    var boty = (y2 + Math.sin(angle2) * h) - 60 * Math.sin(lineangle);
+
+    canvas.drawLine({
+      strokeStyle : "#fff",
+      strokeWidth : 1,
+      x1 : fromx,
+      y1 : fromy,
+      x2 : botx,
+      y2 : boty
+    });
+    canvas.drawLine({
+      strokeStyle : "#fff",
+      strokeWidth : 1,
+      x1 : fromx,
+      y1 : fromy,
+      x2 : topx,
+      y2 : topy
+    });
+  };
+
+  // expose our Constructor if not already present
+  if (!window.LodLive) {
+    window.LodLive = LodLive;
+  }
+
+	/* end lines*/;
+  /**
+    * jQuery plugin for initializing a LodLive instance.  This will initialize a new LodLive instance for each matched element.
+    * @param {object | string=} options for legacy support this can be a string which is the method, \n
+    *   new callers should send an options object which should contain at least 'profile': an instance of LodLiveProfile with which to configure the instance \n
+    *   it may also contain 'method': the name of a LodLive prototype method to invoke (init is default) \n
+    *   if invoking a method with arguments, 'args': may be included as an array of arguments to pass along to the method \n
+    *   When invoking 'init', the entire options will be sent along to the init(ele, options) call and 'args' will be ignored
+    *
+    * If selector.lodlive() is called without any arguments, then the existing instance of LodLive will be returned.  \n
+    *  **** This is NOT backwards compatible **** \n
+    * But it is necessary due to the need to pass in a LodLiveProfile option.  This version of LodLive makes use of NO GLOBAL VARIABLES! \n
+    * The bare miniumum to create a new LodLive instance is selector.lodlive({profile: someProfileInstance }); \n
+    * More complex instances can be created by passing in more options: \n
+    *   selector.lodlive({ profile: someProfileInstance, hashFunc: someHashingFunction, firstURI: 'string URI to load first'});
+    */
+	jQuery.fn.lodlive = function(options) {
+    // if no arguments are provided, then we attempt to return the instance on what is assumed to be a single element match
+    if (!arguments.length) {
+      return this.data('lodlive-instance');
+    }
+
+    if (typeof options === 'string') { // legacy support, method was the only argument
+      options = { method: options };
+    }
+    // we support multiple instances of LodLive on a page, so initialize (or apply) for each matched element
+    return this.each(function() {
+      var ele = $(this), ll = ele.data('lodlive-instance');
+      // no method defaults to init
+      if (!options.method || options.method.toLowerCase() === 'init') {
+
+        ll = new LodLive(ele, options.profile);
+        ele.data('lodlive-instance', ll);
+        ll.init(options.firstUri); // pass in this element and the complete options
+
+      } else if (LodLive.prototype.hasOwnProperty(method) && ele.data('lodlive-instance')) {
+
+        ll[method].apply(ll, method.args || []); // if calling a method with arguments, the options should contain a property named 'args';
+      } else {
+
+        jQuery.error('Method ' + method + ' does not exist on jQuery.lodlive');
+
+      }
+
+    });
+	};
+
+})(jQuery);
+
+'use strict';
+
+(function () {
+    
+  var LodLiveUtils = {};
+
+  var _translations = {};
+
+  LodLiveUtils.getSparqlConf = function(what, where, lodLiveProfile) {
+    return where.sparql && where.sparql[what] ? where.sparql[what] : lodLiveProfile['default'].sparql[what];
+  };
+
+  /**
+    * Register a set of translations, for example ('en-us', { greeting: 'Hello' })
+  **/
+  LodLiveUtils.registerTranslation = function(langKey, data) {
+    _translations[langKey] = data;
+  };
+
+  LodLiveUtils.setDefaultTranslation = function(langKey) {
+    _translations['default'] = _translations[langKey] || _translations['default'];
+  };
+
+  LodLiveUtils.lang = function(obj, langKey) {
+    var lang = langKey ? _translations[langKey] || _translations['default'] : _translations['default'];
+    return (lang && lang[obj]) || obj;
+  };
+
+  LodLiveUtils.isSameAsLine = function(label, x1, y1, x2, y2, canvas, toId) {
+
+    // eseguo i calcoli e scrivo la riga di connessione tra i cerchi
+    var lineangle = (Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI) + 180;
+    var x2bis = x1 - Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) + 60;
+    //canvas.detectPixelRatio();
+    canvas.rotateCanvas({
+      rotate : lineangle,
+      x : x1,
+      y : y1
+    }).drawLine({
+      strokeStyle : "#000",
+      strokeWidth : 1,
+      strokeCap : 'bevel',
+      x1 : x1 - 60,
+      y1 : y1,
+      x2 : x2bis,
+      y2 : y1
+    });
+
+    if (lineangle > 90 && lineangle < 270) {
+      canvas.rotateCanvas({
+        rotate : 180,
+        x : (x2bis + x1) / 2,
+        y : (y1 + y1) / 2
+      });
+    }
+    label = $.trim(label).replace(/\n/g, ', ');
+    canvas.drawText({// inserisco l'etichetta
+      fillStyle : "#000",
+      strokeStyle : "#000",
+      x : (x2bis + x1 + ((x1 + 60) > x2 ? -60 : +60)) / 2,
+      y : (y1 + y1 - ((x1 + 60) > x2 ? 18 : -18)) / 2,
+      text : ((x1 + 60) > x2 ? " « " : "") + label + ((x1 + 60) > x2 ? "" : " » "),
+      align : "center",
+      strokeWidth : 0.01,
+      fontSize : 11,
+      fontFamily : "'Open Sans',Verdana"
+    }).restoreCanvas().restoreCanvas();
+
+    // ed inserisco la freccia per determinarne il verso della
+    // relazione
+    lineangle = Math.atan2(y2 - y1, x2 - x1);
+    var angle = 0.79;
+    var h = Math.abs(8 / Math.cos(angle));
+    var fromx = x2 - 60 * Math.cos(lineangle);
+    var fromy = y2 - 60 * Math.sin(lineangle);
+    var angle1 = lineangle + Math.PI + angle;
+    var topx = (x2 + Math.cos(angle1) * h) - 60 * Math.cos(lineangle);
+    var topy = (y2 + Math.sin(angle1) * h) - 60 * Math.sin(lineangle);
+    var angle2 = lineangle + Math.PI - angle;
+    var botx = (x2 + Math.cos(angle2) * h) - 60 * Math.cos(lineangle);
+    var boty = (y2 + Math.sin(angle2) * h) - 60 * Math.sin(lineangle);
+
+    canvas.drawLine({
+      strokeStyle : "#000",
+      strokeWidth : 1,
+      x1 : fromx,
+      y1 : fromy,
+      x2 : botx,
+      y2 : boty
+    });
+    canvas.drawLine({
+      strokeStyle : "#000",
+      strokeWidth : 1,
+      x1 : fromx,
+      y1 : fromy,
+      x2 : topx,
+      y2 : topy
+    });
+  };
+
+  LodLiveUtils.customLines = function(context, method) {
+    console.log('customLines', method);
+    if (LodLiveUtils[method]) {
+      return LodLiveUtils[method].apply(this, Array.prototype.slice.call(arguments, 2));
+    }
+  };
+
+  if (!window.LodLiveUtils) {
+    window.LodLiveUtils = LodLiveUtils;
+  }
+
+})();
+
+// a causa di un baco di opera e firefox implmento una funzione apposita per
+// settare la posizione dei background
+$.fn.setBackgroundPosition = function(pos) {
+	var backPos = $.trim(this.css('background-position'));
+	var hasString = backPos.indexOf('left') == -1 ? false : true;
+	//added fix for chrome 25
+	backPos = backPos.replace(/top/gi, '').replace(/left/gi, '');
+	backPos = $.trim(backPos.replace(/  /g, ' '));
+
+	try {
+		var backPosArray = backPos.split(" ");
+		if (pos.x || pos.x == 0) {
+			backPosArray[0] = pos.x + 'px';
+		}
+		if (pos.y || pos.y == 0) {
+			backPosArray[1] = pos.y + 'px';
+		}
+		if (hasString) {
+			backPos = "left " + backPosArray[0] + " top " + backPosArray[1];
+		} else {
+			backPos = backPosArray[0] + " " + backPosArray[1];
+		}
+	} catch (e) {
+		alert(e);
+	}
+	this.css({
+		'background-position' : backPos
+	});
+	return this;
+};
+
+var MD5 = function(str) {
+	if (!str) {
+		return "";
+	}
+	str = str.replace(/http:\/\/.+~~/g, '');
+	str = str.replace(/nodeID:\/\/.+~~/g, '');
+	str = str.replace(/_:\/\/.+~~/g, '');
+	function RotateLeft(lValue, iShiftBits) {
+		return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
+	}
+
+	function AddUnsigned(lX, lY) {
+		var lX4, lY4, lX8, lY8, lResult;
+		lX8 = (lX & 0x80000000);
+		lY8 = (lY & 0x80000000);
+		lX4 = (lX & 0x40000000);
+		lY4 = (lY & 0x40000000);
+		lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
+		if (lX4 & lY4) {
+			return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
+		}
+		if (lX4 | lY4) {
+			if (lResult & 0x40000000) {
+				return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
+			} else {
+				return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+			}
+		} else {
+			return (lResult ^ lX8 ^ lY8);
+		}
+	}
+
+	function F(x, y, z) {
+		return (x & y) | ((~x) & z);
+	}
+
+	function G(x, y, z) {
+		return (x & z) | (y & (~z));
+	}
+
+	function H(x, y, z) {
+		return (x ^ y ^ z);
+	}
+
+	function I(x, y, z) {
+		return (y ^ (x | (~z)));
+	}
+
+	function FF(a, b, c, d, x, s, ac) {
+		a = AddUnsigned(a, AddUnsigned(AddUnsigned(F(b, c, d), x), ac));
+		return AddUnsigned(RotateLeft(a, s), b);
+	}
+
+	;
+
+	function GG(a, b, c, d, x, s, ac) {
+		a = AddUnsigned(a, AddUnsigned(AddUnsigned(G(b, c, d), x), ac));
+		return AddUnsigned(RotateLeft(a, s), b);
+	}
+
+	;
+
+	function HH(a, b, c, d, x, s, ac) {
+		a = AddUnsigned(a, AddUnsigned(AddUnsigned(H(b, c, d), x), ac));
+		return AddUnsigned(RotateLeft(a, s), b);
+	}
+
+	;
+
+	function II(a, b, c, d, x, s, ac) {
+		a = AddUnsigned(a, AddUnsigned(AddUnsigned(I(b, c, d), x), ac));
+		return AddUnsigned(RotateLeft(a, s), b);
+	}
+
+	;
+
+	function ConvertToWordArray(string) {
+		var lWordCount;
+		var lMessageLength = string.length;
+		var lNumberOfWords_temp1 = lMessageLength + 8;
+		var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
+		var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
+		var lWordArray = Array(lNumberOfWords - 1);
+		var lBytePosition = 0;
+		var lByteCount = 0;
+		while (lByteCount < lMessageLength) {
+			lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+			lBytePosition = (lByteCount % 4) * 8;
+			lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount) << lBytePosition));
+			lByteCount++;
+		}
+		lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+		lBytePosition = (lByteCount % 4) * 8;
+		lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
+		lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
+		lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
+		return lWordArray;
+	}
+
+	;
+
+	function WordToHex(lValue) {
+		var WordToHexValue = "", WordToHexValue_temp = "", lByte, lCount;
+		for ( lCount = 0; lCount <= 3; lCount++) {
+			lByte = (lValue >>> (lCount * 8)) & 255;
+			WordToHexValue_temp = "0" + lByte.toString(16);
+			WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
+		}
+		return WordToHexValue;
+	}
+
+	;
+
+	function Utf8Encode(string) {
+		string = string.replace(/\r\n/g, "\n");
+		var utftext = "";
+
+		for (var n = 0; n < string.length; n++) {
+
+			var c = string.charCodeAt(n);
+
+			if (c < 128) {
+				utftext += String.fromCharCode(c);
+			} else if ((c > 127) && (c < 2048)) {
+				utftext += String.fromCharCode((c >> 6) | 192);
+				utftext += String.fromCharCode((c & 63) | 128);
+			} else {
+				utftext += String.fromCharCode((c >> 12) | 224);
+				utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+				utftext += String.fromCharCode((c & 63) | 128);
+			}
+
+		}
+
+		return utftext;
+	}
+
+	;
+
+	var x = Array();
+	var k, AA, BB, CC, DD, a, b, c, d;
+	var S11 = 7, S12 = 12, S13 = 17, S14 = 22;
+	var S21 = 5, S22 = 9, S23 = 14, S24 = 20;
+	var S31 = 4, S32 = 11, S33 = 16, S34 = 23;
+	var S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+
+	str = Utf8Encode(str);
+
+	x = ConvertToWordArray(str);
+
+	a = 0x67452301;
+	b = 0xEFCDAB89;
+	c = 0x98BADCFE;
+	d = 0x10325476;
+
+	for ( k = 0; k < x.length; k += 16) {
+		AA = a;
+		BB = b;
+		CC = c;
+		DD = d;
+		a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
+		d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
+		c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
+		b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
+		a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
+		d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
+		c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
+		b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
+		a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
+		d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
+		c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
+		b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
+		a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
+		d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
+		c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
+		b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
+		a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
+		d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
+		c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
+		b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
+		a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
+		d = GG(d, a, b, c, x[k + 10], S22, 0x2441453);
+		c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
+		b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
+		a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
+		d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
+		c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
+		b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
+		a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
+		d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
+		c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
+		b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
+		a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
+		d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
+		c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
+		b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
+		a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
+		d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
+		c = HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
+		b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
+		a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
+		d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
+		c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
+		b = HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
+		a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
+		d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
+		c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
+		b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
+		a = II(a, b, c, d, x[k + 0], S41, 0xF4292244);
+		d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
+		c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
+		b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
+		a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
+		d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
+		c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
+		b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
+		a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
+		d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
+		c = II(c, d, a, b, x[k + 6], S43, 0xA3014314);
+		b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
+		a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
+		d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
+		c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
+		b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
+		a = AddUnsigned(a, AA);
+		b = AddUnsigned(b, BB);
+		c = AddUnsigned(c, CC);
+		d = AddUnsigned(d, DD);
+	}
+
+	var temp = WordToHex(a) + WordToHex(b) + WordToHex(c) + WordToHex(d);
+
+	return temp.toLowerCase();
+
+};
+
+function lang(obj) {
+	return $.jStorage.get('language')[$.jStorage.get('selectedLanguage')][obj];
+}
+
+function breakLines(msg) {
+	msg = msg.replace(/\//g, '/<span style="font-size:1px"> </span>');
+	msg = msg.replace(/&/g, '&<span style="font-size:1px"> </span>');
+	msg = msg.replace(/%/g, '%<span style="font-size:1px"> </span>');
+	return msg;
+}
+
 /*! jQuery UI - v1.9.2 - 2012-11-23
 * http://jqueryui.com
 * Includes: jquery.ui.core.js, jquery.ui.widget.js, jquery.ui.mouse.js, jquery.ui.draggable.js, jquery.ui.droppable.js, jquery.ui.resizable.js, jquery.ui.selectable.js, jquery.ui.sortable.js, jquery.ui.effect.js, jquery.ui.accordion.js, jquery.ui.autocomplete.js, jquery.ui.button.js, jquery.ui.datepicker.js, jquery.ui.dialog.js, jquery.ui.effect-blind.js, jquery.ui.effect-bounce.js, jquery.ui.effect-clip.js, jquery.ui.effect-drop.js, jquery.ui.effect-explode.js, jquery.ui.effect-fade.js, jquery.ui.effect-fold.js, jquery.ui.effect-highlight.js, jquery.ui.effect-pulsate.js, jquery.ui.effect-scale.js, jquery.ui.effect-shake.js, jquery.ui.effect-slide.js, jquery.ui.effect-transfer.js, jquery.ui.menu.js, jquery.ui.position.js, jquery.ui.progressbar.js, jquery.ui.slider.js, jquery.ui.spinner.js, jquery.ui.tabs.js, jquery.ui.tooltip.js

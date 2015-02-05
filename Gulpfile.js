@@ -4,6 +4,7 @@ var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var tar = require('gulp-tar');
 var gzip = require('gulp-gzip');
+var addsrc = require('gulp-add-src');
  
 gulp.task('deps', function() {
   return gulp.src('./js/deps/*.js')
@@ -20,20 +21,25 @@ gulp.task('scripts', function() {
     .pipe(gulp.dest('./dist/'));
 });
 
-gulp.task('styles', function() {
+gulp.task('fonts', function() {
+  return gulp.src('./css/fonts/**/*')
+    .pipe(gulp.dest('./dist/fonts/'));
+});
+
+gulp.task('styles', [ 'fonts' ], function() {
   return gulp.src('./css/*.css')
     .pipe(concat('ml-lodlive.all.css'))
     .pipe(gulp.dest('./dist/'));
-})
+});
 
 gulp.task('build', ['scripts', 'deps', 'styles'], function() {
-  return gulp.src(['./dist/ml-lodlive.min.js', './dist/ml-lodlive.deps.js'])
+  return gulp.src(['./dist/ml-lodlive.js', './dist/ml-lodlive.deps.js'])
     .pipe(concat('ml-lodlive.complete.js'))
     .pipe(gulp.dest('./dist/'));
 });
 
 gulp.task('package', ['build'], function() {
-  return gulp.src(['./dist/ml-lodlive.complete.js', './dist/ml-lodlive.all.css'])
+  return gulp.src(['./dist/ml-lodlive.complete.js', './dist/ml-lodlive.all.css', './dist/fonts/*.*'], { base: './'})
     .pipe(tar('ml-lodlive.tar'))
     .pipe(gzip())
     .pipe(gulp.dest('./'));

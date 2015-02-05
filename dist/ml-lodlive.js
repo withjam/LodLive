@@ -33,20 +33,13 @@
     return r;
   }
 
-  var DEFAULT_BOX_TEMPLATE = '<div class="boxWrapper defaultBoxTemplate" id="first"><div class="box sprite"></div></div>';
+  var DEFAULT_BOX_TEMPLATE = '<div class="boxWrapper lodlive-node defaultBoxTemplate" id="first"><div class="lodlive-node-label box sprite"></div></div>';
 
   /** LodLiveProfile constructor - Not sure this is even necessary, a basic object should suffice - I don't think it adds any features or logic
     * @Class LodLiveProfile
     */
   function LodLiveProfile() {
 
-  }
-
-  /** LodLive constructor takes an instance of LodLiveProfile which should have endpoints defined
-    * There is a bit of overlap with the options passed to init.  Perhaps we combine them and possibly skip the init step?
-    */
-  function LodLive(profile) {
-    this.profile = profile;
   }
 
   //utility functions - might belong somewhere else but here for now so I can see them
@@ -61,24 +54,40 @@
   /**
     * Initializes a new LodLive instance based on the given context (dom element) and possible options
     *
-    * @param {Element|string} context jQuery element or string, if a string jQuery will use it as a selector to find the element
+    * @param {Element|string} container jQuery element or string, if a string jQuery will use it as a selector to find the element
     * @param {object=} options optional hash of options
     */
-  LodLive.prototype.init = function(context,options) {
-    var instance = this, firstUri;
-    console.log('initializing LodLive', context, options);
-    if (typeof options === 'string') {
-      firstUri = options;
-      options = {};
-    } else {
-      firstUri = options.firstUri;
+  function LodLive(container,options) {
+    this.container = container;
+    this.options = options;
+    this.UI = options.UI || {};
+    this.debugOn = options.debugOn && window.console; // don't debug if there is no console
+
+    // container elements
+    this.container = container.css('position', 'relative');
+    this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
+    if (typeof container === 'string') {
+      container = jQuery(container);
     }
-    if (typeof context === 'string') {
-      context = jQuery(context);
+    if (!container.length) {
+      throw 'LodLive: no container found';
     }
-    if (!context.length) {
-      throw 'LodLive: no context found';
-    }
+
+  }
+
+  LodLive.prototype.init = function(firstUri) {
+    var instance = this;
+
+    // instance data
+    this.imagesMap = {};
+    this.mapsMap = {};
+    this.infoPanelMap = {};
+    this.connection = {};
+    this.hashFunc = this.options.hashFunc || hashFunc;
+    this.innerPageMap = {};
+    this.storeIds = {};
+    this.boxTemplate =  this.options.boxTemplate || DEFAULT_BOX_TEMPLATE;
+    this.ignoreBnodes = this.UI.ignoreBnodes;
 
     // TODO: look these up on the context object as data-lodlive-xxxx attributes
     // store settings on the instance
@@ -92,38 +101,21 @@
     $.jStorage.set('doDrawMap', $.jStorage.get('doDrawMap', true));
     $.jStorage.set('showInfoConsole', $.jStorage.get('showInfoConsole', true));
     */
-    // our instance containers
-    this.debugOn = options.debugOn && window.console; // don't debug if there is no console
-    this.context = context;
-    this.imagesMap = {};
-    this.mapsMap = {};
-    this.infoPanelMap = {};
-    this.connection = {};
-    this.hashFunc = options.hashFunc || hashFunc;
-    this.innerPageMap = {};
-    this.storeIds = {};
-    this.boxTemplate = this.profile.boxTemplate || DEFAULT_BOX_TEMPLATE;
-    this.ignoreBnodes = options.ignoreBnodes;
 
-    // context.append('<div id="lodlogo" class="sprite"></div>');
-
-    // creo il primo box, lo aggiungo al documento e lo posiziono
-    // orizzontalmente nel centro
     var firstBox = $(this.boxTemplate);
     this.centerBox(firstBox);
     firstBox.attr('id', this.hashFunc(firstUri));
     firstBox.attr('rel', firstUri);
     firstBox.css('zIndex',1);
-    context.append(firstBox);
+    this.context.append(firstBox);
 
-    // inizializzo la mappa delle classi
     this.classMap = {
-      // randomize first color
+      // TODO: let CSS drive color
       counter : Math.floor(Math.random() * 13) + 1
     };
 
     // attivo le funzioni per il drag
-    this.renewDrag(context.children('.boxWrapper'));
+    this.renewDrag(this.context.children('.boxWrapper'));
 
     // carico il primo documento
     this.openDoc(firstUri, firstBox);
@@ -131,15 +123,6 @@
     this.controlPanel('init');
     this.msg('', 'init');
 
-    jwin.bind('scroll', function() {
-      instance.docInfo(null, 'move');
-      instance.controlPanel('move');
-    });
-    jwin.bind('resize', function() {
-      instance.docInfo('', 'close');
-      instance.controlPanelDiv.remove();
-      instance.controlPanel('init');
-    });
   };
 
   LodLive.prototype.controlPanel = function(action) {
@@ -439,7 +422,7 @@
     * @returns {string} the url
     */
   LodLive.prototype.composeQuery = function(resource, module, testURI) {
-    var  url, res, endpoint, inst = this, lodLiveProfile = inst.profile;
+    var  url, res, endpoint, inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -458,11 +441,11 @@
 
           if (value.proxy) {
 
-            url = value.proxy + '?endpoint=' + value.endpoint + '&' + (value.endpointType ? inst.profile.endpoints[value.endpointType] : inst.profile.endpoints.all ) + '&query=' + encodeURIComponent(res);
+            url = value.proxy + '?endpoint=' + value.endpoint + '&' + (value.endpointType ? inst.options.endpoints[value.endpointType] : inst.options.endpoints.all ) + '&query=' + encodeURIComponent(res);
 
           } else {
 
-            url = value.endpoint + '?' + (value.endpointType ? inst.profile.endpoints[value.endpointType] : inst.profile.endpoints.all) + '&query=' + encodeURIComponent(res);
+            url = value.endpoint + '?' + (value.endpointType ? inst.options.endpoints[value.endpointType] : inst.options.endpoints.all) + '&query=' + encodeURIComponent(res);
 
           }
 
@@ -506,7 +489,7 @@
     var base = uri.replace(/(^http:\/\/[^\/]+\/).+/, '$1'), inst = this;
 
     // TODO: make this more configurable by the instance or profile flags
-    var guessedEndpoint = base + 'sparql?' + inst.profile.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
+    var guessedEndpoint = base + 'sparql?' + inst.options.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
 
     // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
     $.ajax({
@@ -540,29 +523,19 @@
 
   LodLive.prototype.msg = function(msg, action, type, endpoint, inverse) {
     // area dei messaggi
-    var inst = this, msgPanel = inst.context.find('.lodlive-message-container'), msgs;
+    var inst = this, msgPanel = inst.container.find('.lodlive-message-container'), msgs;
     if (!msg) msg = '';
     switch(action) {
 
       case 'init': 
         if (!msgPanel.length) {
           msgPanel = $('<div class="lodlive-message-container"></div>');
-          inst.context.append(msgPanel);
+          inst.container.append(msgPanel);
         }
         break;
 
-      case 'move': 
-        msgPanel.hide();
-        msgPanel.css({
-          display : 'none'
-        });
-        break;
-
-      case 'hide':
-        msgPanel.hide();
-        break;
-
       default:
+        msgPanel.hide();
     }
     msgPanel.empty();
     msg = msg.replace(/http:\/\/.+~~/g, '');
@@ -574,16 +547,12 @@
     msgs = msg.split(' \n ');
 
     if (type === 'fullInfo') {
-      msgPanel.append('<div class="corner sprite"></div>');
       msgPanel.append('<div class="endpoint">' + endpoint + '</div>');
       // why 2?
       if (msgs.length === 2) {
-        msgPanel.append('<div class="separline sprite"></div>');
         msgPanel.append('<div class="from upperline">' + (msgs[0].length > 200 ? msgs[0].substring(0, 200) + '...' : msgs[0]) + '</div>');
-        msgPanel.append('<div class="separline sprite"></div>');
         msgPanel.append('<div class="from upperline">'+ msgs[1] + '</div>');
       } else {
-        msgPanel.append('<div class="separline sprite"></div>');
         msgPanel.append('<div class="from upperline">' + msgs[0] + '</div>');
       }
     } else {
@@ -600,13 +569,6 @@
         msgPanel.append('<div class="from">' + msgs[0] + '</div>');
       }
     }
-    //FIXME: eliminate inline css when possible
-    msgPanel.css({
-      left : 0,
-      top : jwin.height() - msgPanel.height(),
-      position : 'fixed',
-      zIndex : 99999999
-    });
 
     msgPanel.show();
 
@@ -1047,20 +1009,21 @@
     var props = {
       position : 'absolute',
       left : left,
-      top : top
+      top : top,
+      opacity: 0
     };
 
     //console.log('centering top: %s, left: %s', top, left);
 
     //FIXME: we don't want to assume we scroll the entire window here, since we could be just a portion of the screen or have multiples
-    //window.scrollBy(-cw, -ch);
+    inst.context.parent().scrollTop(ch / 2 - inst.context.parent().height() / 2 + 60);
+    inst.context.parent().scrollLeft(cw / 2 - inst.context.parent().width() / 2 + 60);
+    console.log(inst.context.parent().scrollTop());
     //window.scrollBy(cw / 2 - jwin.width() / 2 + 25, ch / 2 - jwin.height() / 2 + 65);
+    aBox.css(props)
 
-    try {
-      aBox.animate(props, 1000);
-    } catch (e) {
-      aBox.css(props);
-    }
+      aBox.animate({ opacity: 1}, 1000);
+
 
     if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  centerBox ');
@@ -1384,6 +1347,59 @@
     }
   };
 
+  var _builtins = {
+    'expand': {
+      title: 'Expand all',
+      icon: 'fa fa-arrows-alt',
+      handler: function(obj, inst) {
+        var idx = 0;
+        var elements = obj.find('.relatedBox:visible');
+        var totalElements = elements.length;
+        var onTo = function() {
+          var elem= elements.eq(idx++);
+          if (elem.length) {
+            elem.click();
+          }
+          if (idx < totalElements) {
+            window.setTimeout(onTo, 75);
+          }
+        };
+        window.setTimeout(onTo, 75);
+      }
+    },
+    'info': {
+      title: 'More info',
+      icon: 'fa fa-info-circle',
+      handler: function(obj, inst) {
+        inst.queryConsole('show', {
+          uriId : obj.attr('rel')
+        });
+      }
+    },
+    'rootNode': {
+      title: 'Make root node',
+      icon: 'fa fa-dot-circle-o',
+      handler: function(obj, instance) {
+        instance.context.empty();
+        instance.init(obj.attr('rel'));
+      }
+    },
+    'remove': {
+      title: 'Remove this node',
+      icon: 'fa fa-trash',
+      hander: function(obj, inst) {
+        inst.removeDoc(obj);
+      }
+    },
+    'openPage': {
+      title: 'Open in another page',
+      icon: 'fa fa-external-link',
+      handler: function(obj, inst) {
+        window.open(obj.attr('rel'));
+      }
+    }
+  };
+
   LodLive.prototype.addClick = function(obj, callback) {
     var inst = this;
     if (inst.debugOn) {
@@ -1448,139 +1464,27 @@
     });
 
     obj.find('.actionBox[rel=tools]').click(function() {
+      var container = $(this), tools = container.find('.lodlive-toolbox');
 
-      if (!inst.context.find('.toolBox:visible').length) {
-
-        var pos = obj.position();
-        //TODO: convert to single quotes, but not critical enough to bother first pass
-        var tools = $("<div class=\"lodlive-toolbox sprite\" style=\"display:none\" ><div class=\"innerActionBox infoQ\" rel=\"infoQ\" title=\"" + LodLiveUtils.lang('moreInfoOnThis') + "\" >&#160;</div><div class=\"innerActionBox center\" rel=\"center\" title=\"" + LodLiveUtils.lang('centerClose') + "\" >&#160;</div><div class=\"innerActionBox newpage\" rel=\"newpage\" title=\"" + LodLiveUtils.lang('openOnline') + "\" >&#160;</div><div class=\"innerActionBox expand\" rel=\"expand\" title=\"" + LodLiveUtils.lang('openRelated') + "\" >&#160;</div><div class=\"innerActionBox remove\" rel=\"remove\" title=\"" + LodLiveUtils.lang('removeResource') + "\" >&#160;</div></div>");
-        inst.context.append(tools);
-        //FIXME: eliminate inline CSS when possible
-        tools.css({
-          top : pos.top - 23,
-          left : pos.left + 10
+      // generate toolbox dom on first click
+      // TODO: should do this during initialization so we can configure which boxes to show
+      if (!tools.length) {
+        tools = $('<div class="lodlive-toolbox"></div>');
+        jQuery.each(inst.UI.tools, function() {
+          var toolConfig = this, t;
+          if (toolConfig.builtin) {
+            toolConfig = _builtins[toolConfig.builtin];
+          }
+          t = jQuery('<div class="innerActionBox" title="' + LodLiveUtils.lang(toolConfig.title) + '"><span class="' + toolConfig.icon + '"></span></div>');
+          t.appendTo(tools).on('click', function() { toolConfig.handler.call(inst, obj, inst); });
         });
+        var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
+        container.append(toolWrapper);
         tools.fadeIn('fast');
-        tools.find('.innerActionBox[rel=expand]').each(function() {
-          var box = $(this);
-          box.click(function() {
-
-            tools.remove();
-            inst.docInfo('', 'close');
-            var idx = 0;
-            var elements = obj.find('.relatedBox:visible');
-            var totalElements = elements.length;
-            function onTo() {
-              var elem= elements.eq(idx++);
-              if (elem.length) {
-                elem.click();
-              }
-              if (idx < totalElements) {
-                window.setTimeout(onTo, 75);
-              }
-            }
-            window.setTimeout(onTo, 75);
-          });
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -515
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-        tools.find('.innerActionBox[rel=infoQ]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            tools.remove();
-            inst.queryConsole('show', {
-              uriId : obj.attr('rel')
-            });
-          });
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -425
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-        tools.find('.innerActionBox[rel=remove]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            // $('.tipsy').remove();
-            inst.removeDoc(obj);
-            tools.remove();
-            inst.docInfo('', 'close');
-          });
-
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -545
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
-        tools.find('.innerActionBox[rel=newpage]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            tools.remove();
-            inst.docInfo('', 'close');
-            window.open(obj.attr('rel'));
-          });
-
-          box.hover(function() {
-            //FIXME: is this meant to be 'tools' or a different parent in between?
-            box.parent().setBackgroundPosition({
-              y : -485
-            });
-          }, function() {
-            box.parent().setBackgroundPosition({
-              y : -395
-            });
-          });
-
-        });
-
-        tools.find('.innerActionBox[rel=center]').each(function() {
-          var box = $(this);
-          box.click(function() {
-            // what is this trying to do?
-            var loca = $(location).attr('href');
-            if (loca.indexOf('?http') != -1) {
-              document.location = loca.substring(0, loca.indexOf('?')) + '?' + obj.attr('rel');
-            }
-          });
-
-          box.hover(function() {
-            tools.setBackgroundPosition({
-              y : -455
-            });
-          }, function() {
-            tools.setBackgroundPosition({
-              y : -395
-            });
-          });
-        });
-
       } else {
-
-        inst.context.find('.toolBox').fadeOut('fast', null, function() {
-
-          $('.toolBox').remove();
-
-        });
+        tools.fadeToggle('fast');
       }
+
     });
 
     //FIXME: why do we need a callback if not async?
@@ -1602,12 +1506,12 @@
     var uris = [];
     var bnodes = [];
     var values = [];
-    var def = inst.profile['default'];
+    var def = inst.options['default'];
 
     if (def) {
 
       // attivo lo sparql interno basato su sesame
-      var res = LodLiveUtils.getSparqlConf('document', def, inst.profile).replace(/\{URI\}/ig, URI);
+      var res = LodLiveUtils.getSparqlConf('document', def, inst.options).replace(/\{URI\}/ig, URI);
       var url = def.endpoint + '?uri=' + encodeURIComponent(URI) + '&query=' + encodeURIComponent(res);
 
       if (inst.showInfoConsole) {
@@ -1670,7 +1574,7 @@
   };
 
   LodLive.prototype.docInfo = function(obj, action) {
-    var inst = this, docInfo = inst.context.find('.lodlive-docinfo');
+    var inst = this, docInfo = inst.container.find('.lodlive-docinfo');
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -1679,19 +1583,16 @@
     switch(action) {
       case 'open':
 
-        var URI = obj.attr('rel');
-        if (docInfo.length) {
-          docInfo.fadeOut('fast', null, function() {
-            docInfo.remove();
-          });
-          if ($('.lodlive-docinfo[rel="info-' + URI + '"]').length > 0) {
-            return;
-          }
+        if (!docInfo.length) {
+          docInfo = $('<div class="lodlive-docinfo" rel="info-' + URI + '"></div>');
+          inst.container.append(docInfo);
         }
 
+        var URI = obj.attr('rel');
+        docInfo.attr('rel', URI);
+
         // predispongo il div contenente il documento
-        docInfo = $('<div class="lodlive-docinfo" rel="info-' + URI + '"></div>');
-        inst.context.append(docInfo);
+
         var SPARQLquery = inst.composeQuery(URI, 'document');
         var uris = [];
         var bnodes = [];
@@ -1704,17 +1605,6 @@
 
           $.ajax({
             url : SPARQLquery,
-            beforeSend : function() {
-              docInfo.html('<img style=\"margin-left:' + (docInfo.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
-              docInfo.css({
-                position : 'fixed',
-                right: 15,
-                top : 0
-              });
-
-              docInfo.attr('data-top', docInfo.position().top);
-
-            },
             success : function(json) {
               json = json.results && json.results.bindings;
 
@@ -1745,9 +1635,7 @@
         break;
 
         default:
-          docInfo.fadeOut('fast', null, function() {
-            docInfo.remove();
-          });
+          docInfo.fadeOut('fast');
     }
 
     if (inst.debugOn) {
@@ -1756,7 +1644,7 @@
   };
 
   LodLive.prototype.processDraw = function(x1, y1, x2, y2, canvas, toId) {
-    var inst = this, start, lodLiveProfile = inst.profile;
+    var inst = this, start, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -1777,7 +1665,7 @@
       for (var o = 0; o < labeArray.length; o++) {
 
         if (lodLiveProfile.arrows[$.trim(labeArray[o])]) {
-          lineStyle = inst.profile.arrows[$.trim(labeArray[o])] + "Line";
+          lineStyle = inst.options.arrows[$.trim(labeArray[o])] + "Line";
         }
 
         var shortKey = LodLive.shortenKey(labeArray[o]);
@@ -1976,23 +1864,6 @@
     }
     // aggiungo al box le informazioni descrittive della risorsa
     var jContents = $('<div></div>');
-    var topSection = $('<div class="topSection sprite"><span>&#160;</span></div>');
-    jResult.append(topSection);
-    topSection.find('span').each(function() {
-      var span = $(this);
-      span.click(function() {
-        inst.docInfo('', 'close');
-      });
-      span.hover(function() {
-        topSection.setBackgroundPosition({
-          y : -410
-        });
-      }, function() {
-        topSection.setBackgroundPosition({
-          y : -390
-        });
-      });
-    });
 
     if (inst.debugOn) {
       console.debug("formatDoc " + 5);
@@ -2017,7 +1888,6 @@
       }
 
       jContents.append(jSection);
-      jContents.append("<div class=\"separ sprite\"></div>");
     }
 
     if (inst.debugOn) {
@@ -2026,7 +1896,6 @@
 
     if (imagesj) {
       jContents.append(imagesj);
-      jContents.append("<div class=\"separ sprite\"></div>");
     }
 
     if (webLinkResult) {
@@ -2040,7 +1909,6 @@
         });
       });
       jContents.append(jWebLinkResult);
-      jContents.append("<div class=\"separ sprite\"></div>");
     }
 
     if (inst.debugOn) {
@@ -2055,7 +1923,7 @@
             if (filter == akey) {
               var shortKey = label;
               try {
-                var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
+                var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div>");
                 jSection.find('label').each(function() {
                   $(this).hover(function() {
                     inst.msg($(this).attr('data-title'), 'show');
@@ -2088,7 +1956,7 @@
           }
           try {
 
-            var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
+            var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div>");
             jSection.find('label').each(function() {
               $(this).hover(function() {
                 inst.msg($(this).attr('data-title'), 'show');
@@ -2171,16 +2039,6 @@
       });
     });
 
-    if (jContents.height() + 40 > $(window).height()) {
-      destBox.find("div.separ:last").remove();
-      destBox.find("div.separLast").remove();
-      jContents.slimScroll({
-        height : $(window).height() - 40,
-        color : '#fff'
-      });
-    } else {
-      destBox.append("<div class=\"separLast\"></div>");
-    }
     if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  formatDoc ');
     }
@@ -2308,7 +2166,7 @@
     * @returns {string=} the property, if found
     */
   LodLive.prototype.getProperty = function(area, prop, context) {
-    var inst = this, lodLiveProfile = inst.profile;
+    var inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -2360,7 +2218,7 @@
 
 
 	LodLive.prototype.format = function(destBox, values, uris, inverses) {
-    var inst = this, classMap = inst.classMap, lodLiveProfile = inst.profile;
+    var inst = this, classMap = inst.classMap, lodLiveProfile = inst.options;
 
 		if (inst.debugOn) {
 			start = new Date().getTime();
@@ -2470,11 +2328,6 @@
 		destBox.append(jResult);
 		var resourceTitle = jResult.text();
     jResult.data('tooltip', resourceTitle);
-		// posiziono il titolo al centro del box
-		jResult.css({
-			'marginTop' : jResult.height() == 13 ? 58 : jResult.height() == 26 ? 51 : 45,
-			'height' : jResult.height() + 5
-		});
 
 		destBox.hover(function() {
         var msgTitle = jResult.text();
@@ -2688,7 +2541,7 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						var objBox = $("<div class=\"groupedRelatedBox sprite\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
@@ -2713,7 +2566,7 @@
 					// if (alredyInserted <
 					// document.lodliveVars['relationsLimit']) {
 					if (innerCounter < 25) {
-						obj = $("<div class=\"aGrouped relatedBox sprite " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
+						obj = $("<div class=\"aGrouped relatedBox " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
 						// containerBox.append(obj);
 						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 						obj.attr("data-circlePos", innerCounter);
@@ -2728,7 +2581,7 @@
 					 */
 					innerCounter++;
 				} else {
-					obj = $("<div class=\"relatedBox sprite " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
+					obj = $("<div class=\"relatedBox " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
 					// containerBox.append(obj);
 					obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 					obj.attr("data-circlePos", a);
@@ -2779,7 +2632,7 @@
 						// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
 						// akey + "\" >" + (propertyGroup[akey].length) +
 						// "</div>");
-						var objBox = $("<div class=\"groupedRelatedBox sprite inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
@@ -2805,7 +2658,7 @@
 					// document.lodliveVars['relationsLimit']) {
 					if (innerCounter < 25) {
 						var destUri = unescape(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
-						obj = $("<div class=\"aGrouped relatedBox sprite inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
+						obj = $("<div class=\"aGrouped relatedBox inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
 						// containerBox.append(obj);
 						obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 						obj.attr("data-circlePos", innerCounter);
@@ -2820,7 +2673,7 @@
 					 */
 					innerCounter++;
 				} else {
-					obj = $("<div class=\"relatedBox sprite inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
+					obj = $("<div class=\"relatedBox inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
 					// containerBox.append(obj);
 					obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 					obj.attr("data-circlePos", a);
@@ -2885,7 +2738,7 @@
 				$(this).parent().children('.' + pager.attr("data-page")).fadeIn('fast');
 			});
 		}); {
-			var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  >&#160;</div>");
+			var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  ><span class=\"fa fa-list\"></span></div>");
 			containerBox.append(obj);
 			obj.hover(function() {
 				$(this).parent().children('.box').setBackgroundPosition({
@@ -2896,7 +2749,7 @@
 					y : 0
 				});
 			});
-			obj = $("<div class=\"actionBox tools\" rel=\"tools\" >&#160;</div>");
+			obj = $('<div class="actionBox tools" rel="tools" ><span class="fa fa-cog"></span></div>');
 			containerBox.append(obj);
 			obj.hover(function() {
 				containerBox.children('.box').setBackgroundPosition({
@@ -3111,7 +2964,7 @@
 
   LodLive.prototype.parseRawResource = function(destBox, resource, fromInverse) {
 
-    var inst = this, values = [], uris = [], lodLiveProfile = inst.profile;
+    var inst = this, values = [], uris = [], lodLiveProfile = inst.options;
 
     if (lodLiveProfile['default']) {
       // attivo lo sparql interno basato su sesame
@@ -3220,9 +3073,6 @@
     destBox.children('.box').html('');
     var jResult = $("<div class=\"boxTitle\"><span>" + LodLiveUtils.lang('enpointNotAvailable') + "</span></div>");
     destBox.children('.box').append(jResult);
-    jResult.css({
-      'marginTop' : jResult.height() == 13 ? 58 : jResult.height() == 26 ? 51 : 45
-    });
     var obj = $("<div class=\"actionBox tools\">&#160;</div>");
     obj.click(function() {
       inst.removeDoc(destBox);
@@ -3277,7 +3127,7 @@
   };
 
   LodLive.prototype.findInverseSameAs = function(anUri, counter, inverse, callback, tot) {
-    var inst = this, lodLiveProfile = inst.profile;
+    var inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -3384,7 +3234,7 @@
   /** Find the subject
     */
   LodLive.prototype.findSubject = function(SPARQLquery, selectedClass, selectedValue, destBox, destInput) {
-    var inst = this, lodLiveProfile = inst.profile;
+    var inst = this, lodLiveProfile = inst.options;
 
     if (inst.debugOn) {
       start = new Date().getTime();
@@ -3541,9 +3391,9 @@
       // no method defaults to init
       if (!options.method || options.method.toLowerCase() === 'init') {
 
-        ll = new LodLive(options.profile);
+        ll = new LodLive(ele, options.profile);
         ele.data('lodlive-instance', ll);
-        ll.init(ele, options); // pass in this element and the complete options
+        ll.init(options.firstUri); // pass in this element and the complete options
 
       } else if (LodLive.prototype.hasOwnProperty(method) && ele.data('lodlive-instance')) {
 
