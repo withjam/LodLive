@@ -18,11 +18,6 @@
 
   var jwin = $(window), jbody = $(document.body);
 
-  $.ajaxSetup({
-      contentType: 'application/json',
-      dataType: 'jsonp'
-  });
-
   // simple MD5 implementation to eliminate dependencies, can still pass in MD5 (or some other algorithm) as options.hashFunc if desired
   function hashFunc(str) {
     if (!str) { return str; }
@@ -494,6 +489,8 @@
     // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
     $.ajax({
       url : guessedEndpoint,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       success : function(data) {
 
         if (data && data.results && data.results.bindings[0]) {
@@ -1524,6 +1521,8 @@
 
       $.ajax({
         url : url,
+        contentType: 'application/json',
+        dataType: 'jsonp',
         beforeSend : function() {
           inst.context.append(destBox);
           destBox.html('<img style=\"margin-left:' + (destBox.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
@@ -1605,6 +1604,8 @@
 
           $.ajax({
             url : SPARQLquery,
+            contentType: 'application/json',
+            dataType: 'jsonp',
             success : function(json) {
               json = json.results && json.results.bindings;
 
@@ -2055,6 +2056,8 @@
 
     $.ajax({
       url : SPARQLquery,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       beforeSend : function() {
         destBox.find('span[class=bnode]').html('<img src="img/ajax-loader-black.gif"/>');
 
@@ -2133,6 +2136,10 @@
       console.debug((new Date().getTime() - start) + '  circleChords ');
     }
     return values;
+  };
+
+  LodLive.prototype.getRelationshipCSS = function(uri) {
+    return this.UI.relationships && this.UI.relationships.hasOwnProperty(uri) ? this.UI.relationships[uri] : {};
   };
 
   LodLive.prototype.getJsonValue = function(map, key, defaultValue) {
@@ -2541,8 +2548,9 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
-						// containerBox.append(objBox);
+						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\" data-property=\"" + akey + "\"  data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						objBox.css(inst.getRelationshipCSS(akey));
+            // containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
 							objBox.addClass('isBnode');
@@ -2553,18 +2561,16 @@
 								}
 							}
 						}
-						objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
+						objBox.css({
+              'top':  (chordsList[a][1] - 8) + 'px',
+              'left': (chordsList[a][0] - 8) + 'px'
+            });
 						objectList.push(objBox);
-						// containerBox.append('<div data-circlePos="' + a +
-						// '" class="showGroupedRelated ' + MD5(akey) +
-						// '"></div>');
+
 						a++;
 						counter++;
 					}
-					// var alredyInserted = $('.relatedBox',
-					// containerBox).length;
-					// if (alredyInserted <
-					// document.lodliveVars['relationsLimit']) {
+
 					if (innerCounter < 25) {
 						obj = $("<div class=\"aGrouped relatedBox " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
 						// containerBox.append(obj);
@@ -2573,12 +2579,7 @@
 						obj.attr("data-circleParts", 36);
 						obj.attr("data-circleid", containerBox.attr('id'));
 					}
-					/*
-					 * } else if (alredyInserted ==
-					 * document.lodliveVars['relationsLimit']) { $('.' +
-					 * MD5(akey), containerBox).append('<span
-					 * class="relatedBox" title="altri elementi">[...]</span>'); }
-					 */
+	
 					innerCounter++;
 				} else {
 					obj = $("<div class=\"relatedBox " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
@@ -2592,6 +2593,7 @@
 				if (obj) {
 					obj.attr("data-circleid", containerBox.attr('id'));
 					obj.attr("data-property", akey);
+          obj.css(inst.getRelationshipCSS(akey));
 					// se si tratta di un  Bnode applico una classe diversa
 					var akeyArray = akey.split(" ");
 					if (obj.attr('rel').indexOf('~~') != -1) {
@@ -2628,11 +2630,9 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						// var objBox = $("<div class=\"groupedRelatedBox
-						// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
-						// akey + "\" >" + (propertyGroup[akey].length) +
-						// "</div>");
-						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+
+						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-property=\"" + akey + "\" data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+            objBox.css(inst.getRelationshipCSS(akey));
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
@@ -2644,18 +2644,16 @@
 								}
 							}
 						}
-						objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
-						// containerBox.append('<div data-circlePos="' + a +
-						// '" class="showGroupedRelated ' + MD5(akey) +
-						// '"></div>');
+						objBox.css({
+              'top': + (chordsList[a][1] - 8) + 'px',
+              'left': + (chordsList[a][0] - 8) + 'px'
+            });
+
 						objectList.push(objBox);
 						a++;
 						counter++;
 					}
-					// var alredyInserted = $('.relatedBox',
-					// containerBox).length;
-					// if (alredyInserted <
-					// document.lodliveVars['relationsLimit']) {
+
 					if (innerCounter < 25) {
 						var destUri = unescape(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
 						obj = $("<div class=\"aGrouped relatedBox inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
@@ -2665,12 +2663,7 @@
 						obj.attr("data-circleParts", 36);
 						obj.attr("data-circleId", containerBox.attr('id'));
 					}
-					/*
-					 * } else if (alredyInserted ==
-					 * document.lodliveVars['relationsLimit']) { $('.' +
-					 * MD5(akey), containerBox).append('<span
-					 * class="relatedBox" title="altri elementi">[...]</span>'); }
-					 */
+
 					innerCounter++;
 				} else {
 					obj = $("<div class=\"relatedBox inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
@@ -2684,6 +2677,7 @@
 				if (obj) {
 					obj.attr("data-circleId", containerBox.attr('id'));
 					obj.attr("data-property", akey);
+          obj.css(inst.getRelationshipCSS(akey));
 					// se si tratta di un sameas applico una classe diversa
 					var akeyArray = akey.split(" ");
 
@@ -2827,6 +2821,8 @@
       //TODO: remove jQuery jsonp dependency
 			$.ajax({
 				url : SPARQLquery,
+        contentType: 'application/json',
+        dataType: 'jsonp',
 				beforeSend : function() {
 					destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
 				},
@@ -2866,6 +2862,8 @@
             //FIXME: remove jQuery.jsonp dependency
 						$.ajax({
 							url : SPARQLquery,
+              contentType: 'application/json',
+              dataType: 'jsonp',
 							beforeSend : function() {
 								destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 5) + 'px\" src="img/ajax-loader.gif"/>');
 							},
@@ -2979,6 +2977,8 @@
       }
       $.ajax({
         url : url,
+        contentType: 'application/json',
+        dataType: 'jsonp',
         beforeSend : function() {
           destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
         },
@@ -3098,6 +3098,8 @@
     var classes = [];
     $.ajax({
       url : SPARQLquery,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },
@@ -3166,6 +3168,8 @@
         $.ajax({
           url : SPARQLquery,
           timeout : 3000,
+          contentType: 'application/json',
+          dataType: 'jsonp',
           beforeSend : function() {
             if (inst.showInfoConsole) {
               inst.queryConsole('log', {
@@ -3255,9 +3259,11 @@
     });
 
     var values = [];
-    //TODO: emlinate the jQuery jsonp dependency
+
     $.ajax({
       url : SPARQLquery,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },
