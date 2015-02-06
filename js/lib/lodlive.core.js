@@ -2135,6 +2135,10 @@
     return values;
   };
 
+  LodLive.prototype.getRelationshipCSS = function(uri) {
+    return this.UI.relationships && this.UI.relationships.hasOwnProperty(uri) ? this.UI.relationships[uri] : {};
+  };
+
   LodLive.prototype.getJsonValue = function(map, key, defaultValue) {
     var inst = this;
     if (inst.debugOn) {
@@ -2541,8 +2545,9 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
-						// containerBox.append(objBox);
+						var objBox = $("<div class=\"groupedRelatedBox\" rel=\"" + MD5(akey) + "\" data-property=\"" + akey + "\"  data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+						objBox.css(inst.getRelationshipCSS(akey));
+            // containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
 							objBox.addClass('isBnode');
@@ -2553,18 +2558,16 @@
 								}
 							}
 						}
-						objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
+						objBox.css({
+              'top':  (chordsList[a][1] - 8) + 'px',
+              'left': (chordsList[a][0] - 8) + 'px'
+            });
 						objectList.push(objBox);
-						// containerBox.append('<div data-circlePos="' + a +
-						// '" class="showGroupedRelated ' + MD5(akey) +
-						// '"></div>');
+
 						a++;
 						counter++;
 					}
-					// var alredyInserted = $('.relatedBox',
-					// containerBox).length;
-					// if (alredyInserted <
-					// document.lodliveVars['relationsLimit']) {
+
 					if (innerCounter < 25) {
 						obj = $("<div class=\"aGrouped relatedBox " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
 						// containerBox.append(obj);
@@ -2573,12 +2576,7 @@
 						obj.attr("data-circleParts", 36);
 						obj.attr("data-circleid", containerBox.attr('id'));
 					}
-					/*
-					 * } else if (alredyInserted ==
-					 * document.lodliveVars['relationsLimit']) { $('.' +
-					 * MD5(akey), containerBox).append('<span
-					 * class="relatedBox" title="altri elementi">[...]</span>'); }
-					 */
+	
 					innerCounter++;
 				} else {
 					obj = $("<div class=\"relatedBox " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
@@ -2592,6 +2590,7 @@
 				if (obj) {
 					obj.attr("data-circleid", containerBox.attr('id'));
 					obj.attr("data-property", akey);
+          obj.css(inst.getRelationshipCSS(akey));
 					// se si tratta di un  Bnode applico una classe diversa
 					var akeyArray = akey.split(" ");
 					if (obj.attr('rel').indexOf('~~') != -1) {
@@ -2628,11 +2627,9 @@
 					if (!inserted[akey]) {
 						innerCounter = 1;
 						inserted[akey] = true;
-						// var objBox = $("<div class=\"groupedRelatedBox
-						// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
-						// akey + "\" >" + (propertyGroup[akey].length) +
-						// "</div>");
-						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+
+						var objBox = $("<div class=\"groupedRelatedBox inverse\" rel=\"" + MD5(akey) + "-i\"   data-property=\"" + akey + "\" data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + LodLiveUtils.lang('connectedResources') + "\" ></div>");
+            objBox.css(inst.getRelationshipCSS(akey));
 						// containerBox.append(objBox);
 						var akeyArray = akey.split(" ");
 						if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
@@ -2644,18 +2641,16 @@
 								}
 							}
 						}
-						objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
-						// containerBox.append('<div data-circlePos="' + a +
-						// '" class="showGroupedRelated ' + MD5(akey) +
-						// '"></div>');
+						objBox.css({
+              'top': + (chordsList[a][1] - 8) + 'px',
+              'left': + (chordsList[a][0] - 8) + 'px'
+            });
+
 						objectList.push(objBox);
 						a++;
 						counter++;
 					}
-					// var alredyInserted = $('.relatedBox',
-					// containerBox).length;
-					// if (alredyInserted <
-					// document.lodliveVars['relationsLimit']) {
+
 					if (innerCounter < 25) {
 						var destUri = unescape(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
 						obj = $("<div class=\"aGrouped relatedBox inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
@@ -2665,12 +2660,7 @@
 						obj.attr("data-circleParts", 36);
 						obj.attr("data-circleId", containerBox.attr('id'));
 					}
-					/*
-					 * } else if (alredyInserted ==
-					 * document.lodliveVars['relationsLimit']) { $('.' +
-					 * MD5(akey), containerBox).append('<span
-					 * class="relatedBox" title="altri elementi">[...]</span>'); }
-					 */
+
 					innerCounter++;
 				} else {
 					obj = $("<div class=\"relatedBox inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
@@ -2684,6 +2674,7 @@
 				if (obj) {
 					obj.attr("data-circleId", containerBox.attr('id'));
 					obj.attr("data-property", akey);
+          obj.css(inst.getRelationshipCSS(akey));
 					// se si tratta di un sameas applico una classe diversa
 					var akeyArray = akey.split(" ");
 

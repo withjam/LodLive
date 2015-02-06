@@ -71,7 +71,18 @@ MarkLogicProfile.UI = {
       }
     },
     { builtin: 'expand' }
-  ]
+  ],
+  relationships: {
+    'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
+      color: '#000'
+    },
+    'http://www.w3.org/2004/02/skos/core#broader': {
+      color: '#69C'
+    },
+    'http://www.w3.org/2004/02/skos/core#related': {
+      color: '#FFF444'
+    }
+  }
 };
 
 MarkLogicProfile.endpoints = {

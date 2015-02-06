@@ -75,18 +75,18 @@
   z-index: 101;
   text-align: center;
   cursor: pointer;
+  color: #369;
 }
+
 .lodlive-node .relatedBox:before {
   content: "\f111";
   font-family: FontAwesome;
-  color: #369;
   font-size: 14px;
-} 
-.lodlive-node .relatedBox.isType:before { color: black; }
+}
+
 .lodlive-node .groupedRelatedBox:before {
   content: "\f0a3";
   font-family: FontAwesome;
-  color: #369;
   font-size: 16px;
 }
 .lodlive-node .thisiscsscircle { background: #369; width: 14px; height: 14px; border-radius: 14px; }
