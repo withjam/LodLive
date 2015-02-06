@@ -18,11 +18,6 @@
 
   var jwin = $(window), jbody = $(document.body);
 
-  $.ajaxSetup({
-      contentType: 'application/json',
-      dataType: 'jsonp'
-  });
-
   // simple MD5 implementation to eliminate dependencies, can still pass in MD5 (or some other algorithm) as options.hashFunc if desired
   function hashFunc(str) {
     if (!str) { return str; }
@@ -494,6 +489,8 @@
     // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
     $.ajax({
       url : guessedEndpoint,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       success : function(data) {
 
         if (data && data.results && data.results.bindings[0]) {
@@ -1524,6 +1521,8 @@
 
       $.ajax({
         url : url,
+        contentType: 'application/json',
+        dataType: 'jsonp',
         beforeSend : function() {
           inst.context.append(destBox);
           destBox.html('<img style=\"margin-left:' + (destBox.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
@@ -1605,6 +1604,8 @@
 
           $.ajax({
             url : SPARQLquery,
+            contentType: 'application/json',
+            dataType: 'jsonp',
             success : function(json) {
               json = json.results && json.results.bindings;
 
@@ -2055,6 +2056,8 @@
 
     $.ajax({
       url : SPARQLquery,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       beforeSend : function() {
         destBox.find('span[class=bnode]').html('<img src="img/ajax-loader-black.gif"/>');
 
@@ -2818,6 +2821,8 @@
       //TODO: remove jQuery jsonp dependency
 			$.ajax({
 				url : SPARQLquery,
+        contentType: 'application/json',
+        dataType: 'jsonp',
 				beforeSend : function() {
 					destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
 				},
@@ -2857,6 +2862,8 @@
             //FIXME: remove jQuery.jsonp dependency
 						$.ajax({
 							url : SPARQLquery,
+              contentType: 'application/json',
+              dataType: 'jsonp',
 							beforeSend : function() {
 								destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 5) + 'px\" src="img/ajax-loader.gif"/>');
 							},
@@ -2970,6 +2977,8 @@
       }
       $.ajax({
         url : url,
+        contentType: 'application/json',
+        dataType: 'jsonp',
         beforeSend : function() {
           destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
         },
@@ -3089,6 +3098,8 @@
     var classes = [];
     $.ajax({
       url : SPARQLquery,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },
@@ -3157,6 +3168,8 @@
         $.ajax({
           url : SPARQLquery,
           timeout : 3000,
+          contentType: 'application/json',
+          dataType: 'jsonp',
           beforeSend : function() {
             if (inst.showInfoConsole) {
               inst.queryConsole('log', {
@@ -3246,9 +3259,11 @@
     });
 
     var values = [];
-    //TODO: emlinate the jQuery jsonp dependency
+
     $.ajax({
       url : SPARQLquery,
+      contentType: 'application/json',
+      dataType: 'jsonp',
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },
