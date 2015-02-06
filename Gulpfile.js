@@ -7,7 +7,7 @@ var gzip = require('gulp-gzip');
 var addsrc = require('gulp-add-src');
  
 gulp.task('deps', function() {
-  return gulp.src('./js/deps/*.js')
+  return gulp.src(['./js/deps/*.js', '!./js/deps/jquery-ui-1.9.2.min.js'])
     .pipe(concat('ml-lodlive.deps.js'))
     .pipe(gulp.dest('./dist'));
 });
