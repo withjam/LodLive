@@ -1463,32 +1463,16 @@
     inst.innerPageMap[obj.attr('id')] = obj.children('.innerPage');
     obj.children('.innerPage').detach();
     // aggiungo le azioni dei tools
-    obj.find('.actionBox[rel=contents]').click(function() {
-      inst.docInfo(obj);
-    });
-
-    obj.find('.actionBox[rel=tools]').click(function() {
-      var container = $(this), tools = container.find('.lodlive-toolbox');
-
-      // generate toolbox dom on first click
-      // TODO: should do this during initialization so we can configure which boxes to show
-      if (!tools.length) {
-        tools = $('<div class="lodlive-toolbox"></div>');
-        jQuery.each(inst.UI.tools, function() {
-          var toolConfig = this, t;
-          if (toolConfig.builtin) {
-            toolConfig = _builtins[toolConfig.builtin];
-          }
-          t = jQuery('<div class="innerActionBox" title="' + LodLiveUtils.lang(toolConfig.title) + '"><span class="' + toolConfig.icon + '"></span></div>');
-          t.appendTo(tools).on('click', function() { toolConfig.handler.call(inst, obj, inst); });
-        });
-        var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
-        container.append(toolWrapper);
-        tools.fadeIn('fast');
+    obj.on('click', '.actionBox', function(evt) {
+      var el = $(this), handler = el.data('action-handler'), rel = el.attr('rel');
+      if (handler) {
+        handler.call(el, obj, inst, evt);
       } else {
-        tools.fadeToggle('fast');
+        switch(rel) {
+          case 'docInfo':  inst.docInfo(obj); break;
+          case 'tools': inst.generateTools(el, obj).fadeToggle('fast'); break;
+        }
       }
-
     });
 
     //FIXME: why do we need a callback if not async?
@@ -1499,6 +1483,25 @@
     if (inst.debugOn) {
       console.debug((new Date().getTime() - start) + '  addClick ');
     }
+  };
+
+  LodLive.prototype.generateTools = function(container, obj) {
+    var inst = this, tools = container.find('.lodlive-toolbox');
+    if (!tools.length) {
+      tools = $('<div class="lodlive-toolbox"></div>').hide();
+      jQuery.each(inst.UI.tools, function() {
+        var toolConfig = this, t;
+        if (toolConfig.builtin) {
+          toolConfig = _builtins[toolConfig.builtin];
+        }
+        if (!toolConfig) return;
+        t = jQuery('<div class="innerActionBox" title="' + LodLiveUtils.lang(toolConfig.title) + '"><span class="' + toolConfig.icon + '"></span></div>');
+        t.appendTo(tools).on('click', function() { toolConfig.handler.call(inst, obj, inst); });
+      });
+      var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
+      container.append(toolWrapper);
+    }
+    return tools;
   };
 
   LodLive.prototype.parseRawResourceDoc = function(destBox, URI) {
@@ -2741,33 +2744,27 @@
 				$(this).parent().children('.' + pager.attr("data-page")).fadeIn('fast');
 			});
 		}); {
-			var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  ><span class=\"fa fa-list\"></span></div>");
-			containerBox.append(obj);
-			obj.hover(function() {
-				$(this).parent().children('.box').setBackgroundPosition({
-					y : -260
-				});
-			}, function() {
-				$(this).parent().children('.box').setBackgroundPosition({
-					y : 0
-				});
-			});
-			obj = $('<div class="actionBox tools" rel="tools" ><span class="fa fa-cog"></span></div>');
-			containerBox.append(obj);
-			obj.hover(function() {
-				containerBox.children('.box').setBackgroundPosition({
-					y : -130
-				});
-			}, function() {
-				containerBox.children('.box').setBackgroundPosition({
-					y : 0
-				});
-			});
+      // append the tools
+      jQuery.each(inst.UI.nodeIcons, function(index) {
+        var opts = this, obj;
+        if (opts.builtin) {
+          obj = jQuery(_builtinTools[opts.builtin] || '<span class="no such builtin"></span>');
+        } else {  // construct custom action box
+          var obj = $('<div class="actionBox custom"></div>').data('action-handler', opts.handler);
+          $('<span></span>').addClass(opts.icon).attr('title',opts.title).appendTo(obj);
+        }
+        obj.appendTo(containerBox);
+      });
 		}
 		if (inst.debugOn) {
 			console.debug((new Date().getTime() - start) + '	format ');
 		}
 	};
+
+  var _builtinTools = {
+    'docInfo': '<div class="actionBox docInfo" rel="docInfo"><span class="fa fa-list"></span></div>',
+    'tools': '<div class="actionBox tools" rel="tools"><span class="fa fa-cog"></span></div>'
+  }
 
   LodLive.prototype.openDoc = function(anUri, destBox, fromInverse) {
     var inst = this;
@@ -3081,11 +3078,6 @@
     destBox.children('.box').html('');
     var jResult = $("<div class=\"boxTitle\"><span>" + LodLiveUtils.lang('enpointNotAvailable') + "</span></div>");
     destBox.children('.box').append(jResult);
-    var obj = $("<div class=\"actionBox tools\">&#160;</div>");
-    obj.click(function() {
-      inst.removeDoc(destBox);
-    });
-    destBox.append(obj);
     destBox.children('.box').hover(function() {
       inst.msg(LodLiveUtils.lang('enpointNotAvailableOrSLow'), 'show', 'fullInfo', destBox.attr("data-endpoint"));
     }, function() {

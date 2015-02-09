@@ -62,8 +62,10 @@
   text-align: center;
   line-height: 20px;
 }
-.lodlive-node .actionBox.contents { top: 13px; left: 94px; }
-.lodlive-node .actionBox.tools { left: 70px; top: -5px; }
+.lodlive-node .actionBox:nth-last-child(-n+4) { top: -3px; left: 45px; }
+.lodlive-node .actionBox:nth-last-child(-n+3) { top: -3px; left: 70px; }
+.lodlive-node .actionBox:nth-last-child(-n+2) { top: 10px; left: 92px; }
+.lodlive-node .actionBox:last-child { top: 30px; left: 110px; }
 
 .lodlive-node .lodlive-toolbox-wrapper { position: relative; height: 0; width: 0; }
 .lodlive-node .lodlive-toolbox { position: absolute; right: -20px; top: -3em; white-space: nowrap; width: auto; }

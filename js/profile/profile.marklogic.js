@@ -49,8 +49,9 @@ MarkLogicProfile.default = {
 
 MarkLogicProfile.UI = {
   ignoreBnodes: true,
-  tools: [
-    { builtin: 'rootNode'},
+  nodeIcons: [
+    { builtin: 'tools' },
+    { builtin: 'docInfo' },
     { 
       icon: 'fa fa-thumb-tack', 
       title: 'Pin in SPARQL',
@@ -69,7 +70,11 @@ MarkLogicProfile.UI = {
           }
         }
       }
-    },
+    }
+  ],
+  tools: [
+    { builtin: 'close' },
+    { builtin: 'rootNode'},
     { builtin: 'expand' }
   ],
   // docInfo: function() {},
