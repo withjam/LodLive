@@ -486,11 +486,10 @@
     // TODO: make this more configurable by the instance or profile flags
     var guessedEndpoint = base + 'sparql?' + inst.options.endpoints.all + '&query=' + encodeURIComponent('select * where {?a ?b ?c} LIMIT 1');
 
-    // TODO: we should be able to find the connection key this relates to so we can look up other properties (like POST vs GET, jsonp callback, etc)
     $.ajax({
       url : guessedEndpoint,
       contentType: 'application/json',
-      dataType: 'jsonp',
+      dataType: inst.getAjaxDataType(),
       success : function(data) {
 
         if (data && data.results && data.results.bindings[0]) {
@@ -1233,7 +1232,7 @@
         inst.context.find('#line-' + generatedRev[a]).clearCanvas();
       }
     }
-    inst.docInfo('', 'close');
+    inst.docInfo();
     var cp = inst.context.find('.lodLiveControlPanel');
 
     if (inst.doCollectImages) {
@@ -1427,7 +1426,7 @@
       box.click(function() {
         if (box.data('show')) {
           box.data('show', false);
-          inst.docInfo('', 'close');
+          inst.docInfo();
           box.removeClass('lastClick');
           obj.find('.' + box.attr('rel')).fadeOut('fast');
           box.fadeTo('fast', 1);
@@ -1435,7 +1434,7 @@
         } else {
           box.data('show', true);
           obj.append(inst.innerPageMap[obj.attr('id')]);
-          inst.docInfo('', 'close');
+          inst.docInfo();
           obj.find('.lastClick').removeClass('lastClick').click();
           if (!obj.children('.innerPage').length) {
             obj.append(inst.innerPageMap[obj.attr('id')]);
@@ -1457,7 +1456,7 @@
     obj.children('.innerPage').detach();
     // aggiungo le azioni dei tools
     obj.find('.actionBox[rel=contents]').click(function() {
-      inst.docInfo(obj, 'open');
+      inst.docInfo(obj);
     });
 
     obj.find('.actionBox[rel=tools]').click(function() {
@@ -1522,7 +1521,7 @@
       $.ajax({
         url : url,
         contentType: 'application/json',
-        dataType: 'jsonp',
+        dataType: inst.getAjaxDataType(),
         beforeSend : function() {
           inst.context.append(destBox);
           destBox.html('<img style=\"margin-left:' + (destBox.width() / 2) + 'px;margin-top:147px\" src="img/ajax-loader-gray.gif"/>');
@@ -1572,76 +1571,73 @@
     }
   };
 
-  LodLive.prototype.docInfo = function(obj, action) {
-    var inst = this, docInfo = inst.container.find('.lodlive-docinfo');
+  /**
+    * Default function for showing info on a selected node.  Simply opens a panel that displays it's properties.  Calling it without an object will close it.
+    * @param {Object=} obj a jquery wrapped DOM element that is a node, or null.  If null is passed then it will close any open doc info panel
+   **/
+  LodLive.prototype.docInfo = function(obj) {
+    var inst = this, URI, docInfo = inst.container.find('.lodlive-docinfo');
 
-    if (inst.debugOn) {
-      start = new Date().getTime();
+    if (obj == null || ((URI = obj.attr('rel')) && docInfo.is('[rel="'+ URI + '"]'))) {
+      console.log('hiding');
+      docInfo.fadeOut('fast').removeAttr('rel');
+      return;
     }
 
-    switch(action) {
-      case 'open':
+    URI = obj.attr('rel');
 
-        if (!docInfo.length) {
-          docInfo = $('<div class="lodlive-docinfo" rel="info-' + URI + '"></div>');
-          inst.container.append(docInfo);
-        }
+    if (!docInfo.length) {
+      docInfo = $('<div class="lodlive-docinfo" rel="' + URI + '"></div>');
+      inst.container.append(docInfo);
+    }
 
-        var URI = obj.attr('rel');
-        docInfo.attr('rel', URI);
+    var URI = obj.attr('rel');
+    docInfo.attr('rel', URI);
 
-        // predispongo il div contenente il documento
+    // predispongo il div contenente il documento
 
-        var SPARQLquery = inst.composeQuery(URI, 'document');
-        var uris = [];
-        var bnodes = [];
-        var values = [];
-        if (SPARQLquery.indexOf('http://system/dummy') === 0) {
+    var SPARQLquery = inst.composeQuery(URI, 'document');
+    var uris = [];
+    var bnodes = [];
+    var values = [];
+    if (SPARQLquery.indexOf('http://system/dummy') === 0) {
 
-          inst.parseRawResourceDoc(docInfo, URI);
+      inst.parseRawResourceDoc(docInfo, URI);
 
-        } else {
+    } else {
 
-          $.ajax({
-            url : SPARQLquery,
-            contentType: 'application/json',
-            dataType: 'jsonp',
-            success : function(json) {
-              json = json.results && json.results.bindings;
+      $.ajax({
+        url : SPARQLquery,
+        contentType: 'application/json',
+        dataType: inst.getAjaxDataType(),
+        success : function(json) {
+          json = json.results && json.results.bindings;
 
-              //TODO: FIXME: these evals again - fix em later, seriously -- maybe combine them into a reusable func if they do the same thing
-
-              $.each(json, function(key, value) {
-                if (value.object.type == 'uri') {
-                  eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
-                } else if (value.object.type == 'bnode') {
-                  eval('bnodes.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
-                } else {
-                  eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
-                }
-              });
-
-              docInfo.html('');
-              inst.formatDoc(docInfo, values, uris, bnodes, URI);
-            },
-            error : function(e, b, v) {
-              destBox.html('');
-              values = [{
-                'http://system/msg' : 'risorsa non trovata: ' + destBox.attr('rel')
-              }];
-              inst.formatDoc(docInfo, values, uris, bnodes, URI);
+          $.each(json, function(key, value) {
+            var newVal = {};
+            newVal[value.property.value] = value.object.value;
+            if (value.object.type === 'uri') {
+              uris.push(newVal);
+            } else if (value.object.type == 'bnode') {
+              bnodes.push(newVal);
+            } else {
+              values.push(newVal);
             }
           });
+
+          docInfo.empty().fadeIn();
+          inst.formatDoc(docInfo, values, uris, bnodes, URI);
+        },
+        error : function(e, b, v) {
+          destBox.html('');
+          values = [{
+            'http://system/msg' : 'Could not find document: ' + destBox.attr('rel')
+          }];
+          inst.formatDoc(docInfo, values, uris, bnodes, URI);
         }
-        break;
-
-        default:
-          docInfo.fadeOut('fast');
+      });
     }
 
-    if (inst.debugOn) {
-      console.debug((new Date().getTime() - start) + '  docInfo ');
-    }
   };
 
   LodLive.prototype.processDraw = function(x1, y1, x2, y2, canvas, toId) {
@@ -2045,6 +2041,11 @@
     }
   };
 
+  LodLive.prototype.getAjaxDataType = function() {
+    // TODO: consider accepting URL as parameter and detect if it requires JSONP or not
+    return this.options.endpoints.jsonp ? 'jsonp' : 'json';
+  }
+
   LodLive.prototype.resolveBnodes = function(val, URI, destBox, jContents) {
     var inst = this;
 
@@ -2057,7 +2058,7 @@
     $.ajax({
       url : SPARQLquery,
       contentType: 'application/json',
-      dataType: 'jsonp',
+      dataType: inst.getAjaxDataType(),
       beforeSend : function() {
         destBox.find('span[class=bnode]').html('<img src="img/ajax-loader-black.gif"/>');
 
@@ -2822,7 +2823,7 @@
 			$.ajax({
 				url : SPARQLquery,
         contentType: 'application/json',
-        dataType: 'jsonp',
+        dataType: inst.getAjaxDataType(),
 				beforeSend : function() {
 					destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
 				},
@@ -2859,11 +2860,10 @@
 						SPARQLquery = inst.composeQuery(anUri, 'inverse');
 
 						var inverses = [];
-            //FIXME: remove jQuery.jsonp dependency
 						$.ajax({
 							url : SPARQLquery,
               contentType: 'application/json',
-              dataType: 'jsonp',
+              dataType: inst.getAjaxDataType(),
 							beforeSend : function() {
 								destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 5) + 'px\" src="img/ajax-loader.gif"/>');
 							},
@@ -2978,7 +2978,7 @@
       $.ajax({
         url : url,
         contentType: 'application/json',
-        dataType: 'jsonp',
+        dataType: inst.getAjaxDataType(),
         beforeSend : function() {
           destBox.children('.box').html('<img style=\"margin-top:' + (destBox.children('.box').height() / 2 - 8) + 'px\" src="img/ajax-loader.gif"/>');
         },
@@ -3099,7 +3099,7 @@
     $.ajax({
       url : SPARQLquery,
       contentType: 'application/json',
-      dataType: 'jsonp',
+      dataType: inst.getAjaxDataType(),
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },
@@ -3169,7 +3169,7 @@
           url : SPARQLquery,
           timeout : 3000,
           contentType: 'application/json',
-          dataType: 'jsonp',
+          dataType: inst.getAjaxDataType(),
           beforeSend : function() {
             if (inst.showInfoConsole) {
               inst.queryConsole('log', {
@@ -3263,7 +3263,7 @@
     $.ajax({
       url : SPARQLquery,
       contentType: 'application/json',
-      dataType: 'jsonp',
+      dataType: inst.getAjaxDataType(),
       beforeSend : function() {
         destBox.html('<img src="img/ajax-loader.gif"/>');
       },

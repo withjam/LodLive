@@ -86,5 +86,6 @@ MarkLogicProfile.UI = {
 };
 
 MarkLogicProfile.endpoints = {
-  all : 'output=json&format=json&timeout=0'
+  all : 'output=json&format=json&timeout=0',
+  jsonp: true
 };
