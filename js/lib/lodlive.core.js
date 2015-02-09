@@ -58,6 +58,14 @@
     this.UI = options.UI || {};
     this.debugOn = options.debugOn && window.console; // don't debug if there is no console
 
+    // allow them to override the docInfo function
+    if (this.UI.docInfo) {
+      this.docInfo = this.UI.docInfo;
+    }
+    if (this.UI.nodeHover) {
+      this.msg = this.UI.nodeHover;
+    }
+
     // container elements
     this.container = container.css('position', 'relative');
     this.context = jQuery('<div class="lodlive-graph-context"></div>').appendTo(container).wrap('<div class="lodlive-graph-container"></div>');
