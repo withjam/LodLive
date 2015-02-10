@@ -5,13 +5,13 @@ var MarkLogicProfile = {};
 MarkLogicProfile.connection = {
   // http matches all http requests, so this will be the only connection settings used
  'http:' : {
-    sparql : {
-      allClasses : 'SELECT DISTINCT ?object WHERE {[] a ?object}',
-      findSubject : 'SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1  ',
-      documentUri : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object} ORDER BY ?property',
-      document : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object}',
-      bnode : 'SELECT DISTINCT *  WHERE {<{URI}> ?property ?object}',
-      inverse : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
+    sparqlX : {
+      allClasses    : 'SELECT DISTINCT ?object WHERE {[] a ?object}',
+      findSubject   : 'SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>; <http://xmlns.com/foaf/0.1/name> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1  ',
+      documentUri   : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object} ORDER BY ?property',
+      document      : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object}',
+      bnode         : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object}',
+      inverse       : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
       inverseSameAs : 'SELECT DISTINCT * WHERE {{?object <http://www.w3.org/2002/07/owl#sameAs> <{URI}> } UNION { ?object <http://www.w3.org/2004/02/skos/core#exactMatch> <{URI}>}}'
     },
     endpoint : "http://localhost:8321/lodlive.xqy",
@@ -23,30 +23,63 @@ MarkLogicProfile.connection = {
 
 // here we define the known relationships so that labels will appear
 MarkLogicProfile.arrows = {
-  'http://www.w3.org/2002/07/owl#sameAs' : 'isSameAs',
-  'http://purl.org/dc/terms/isPartOf' : 'isPartOf',
-  'http://purl.org/dc/elements/1.1/type' : 'isType',
-  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' : 'isType'
+  'http://www.w3.org/2002/07/owl#sameAs'   : 'isSameAs',
+  'http://purl.org/dc/terms/isPartOf'      : 'isPartOf',
+  'http://purl.org/dc/elements/1.1/type'   : 'isType',
+  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' : 'isType',
+  "http://ieee.org/concept/coContrib"      : 'Contributor To',
+  "http://ieee.org/concept/hasAffiliation" : 'Has Affiliation',
 };
 
 // this is the default data configuration, this is important.  It informs LodLive how to construct queries and how to read the data that comes back
-MarkLogicProfile.default = {
-  sparql : {
-    allClasses : 'SELECT DISTINCT ?object WHERE {[] a ?object}',
-    findSubject : 'SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1  ',
-    documentUri : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object} ORDER BY ?property',
-    document : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object}',
-    bnode : 'SELECT DISTINCT *  WHERE {<{URI}> ?property ?object}',
-    inverse : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
+MarkLogicProfile.default2 = {
+  sparqlx : {
+    allClasses    : 'SELECT DISTINCT ?object WHERE {[] < ?object}',
+    findSubject   : 'SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>; <http://xmlns.com/foaf/0.1/name> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1 ',
+    documentUri   : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object} ORDER BY ?property',
+    document      : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object}',
+    bnode         : 'SELECT DISTINCT *  WHERE {<{URI}> ?property ?object}',
+    inverse       : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
     inverseSameAs : 'SELECT DISTINCT * WHERE {{?object <http://www.w3.org/2002/07/owl#sameAs> <{URI}> } UNION { ?object <http://www.w3.org/2004/02/skos/core#exactMatch> <{URI}>}}'
   },
   endpoint : 'http://labs.regesta.com/resourceProxy/',
   document : {
     className : 'standard',
-    titleProperties : 'http://www.w3.org/2004/02/skos/core#prefLabel'
+    titleProperties : [
+        'http://xmlns.com/foaf/0.1/name',
+        'http://purl.org/dc/elements/1.1/title'
+        ]
   }, // http://www.w3.org/2000/01/rdf-schema#label
 };
-
+// this is the default data configuration, this is important.  It informs LodLive how to construct queries and how to read the data that comes back
+MarkLogicProfile.default = {
+  sparql : {
+    allClasses    : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?object  WHERE {   {?subject  <http://purl.org/dc/elements/1.1/type> ?object  }}',
+    findSubject   : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>; <http://xmlns.com/foaf/0.1/name> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1 ',
+    documentUri   : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?property ?object  WHERE { {?subject (dc:type) ?base . ?subject (dc:type) ?type ;  ?property ?dest } {?dest (dc:type) ?object}} ORDER BY ?property',
+    document      : 'PREFIX dc: <http://purl.org/dc/elements/1.1/>  SELECT DISTINCT  ?property ?object  WHERE { ?spo dc:type  <{URI}> . ?spo ?property  ?object FILTER (?property = dc:title)} LIMIT 100',
+    bnode         : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?subject ?property ?object  WHERE { {<{URI}> (dc:type) ?base . ?subject (dc:type) ?type ;  ?property ?object } {?object (dc:type) ?dest}} ORDER BY ?property',
+    inverse       : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
+    inverseSameAs : 'SELECT DISTINCT * WHERE {{?object <http://www.w3.org/2002/07/owl#sameAs> <{URI}> } UNION { ?object <http://www.w3.org/2004/02/skos/core#exactMatch> <{URI}>}}'
+  },
+  endpoint : 'http://labs.regesta.com/resourceProxy/',
+  document : {
+    className : 'standard',
+    titleProperties : [
+        'http://xmlns.com/foaf/0.1/name',
+        'http://purl.org/dc/elements/1.1/title',
+        'http://purl.org/dc/elements/1.1/type'
+        ],
+    titleName : {
+      "http://ieee.org/concept/document" : "Document",
+      "http://ieee.org/concept/topic" : "Topic",
+      "http://ieee.org/concept/organization" : "Organization",
+      "http://ieee.org/concept/person" : "Person",
+      "http://ieee.org/concept/fundingAward" : "FundingAward",
+      "http://ieee.org/concept/funder" : "Funder"
+    }
+  }, // http://www.w3.org/2000/01/rdf-schema#label
+};
 MarkLogicProfile.UI = {
   ignoreBnodes: true,
   nodeIcons: [
@@ -73,12 +106,6 @@ MarkLogicProfile.UI = {
             dataType: inst.getAjaxDataType(),
             success: function(resp) { 
               var b = resp.results.bindings;
-              for (var i=0; i < 20; i++) {
-                $('<div class="rsuite-pinner-result-item" data-pinned-type="'+ uri + '" data-pinned-value="'+ i +'"> item ' + i + '</div>' )
-                  .addClass(inst.rsuitePinned.indexOf(i) > -1 ? 'rsuite-is-pinned' : '')
-                  .appendTo(resdiv);
-              }
-              return;
               if (!b.length) {
                 resdiv.html('<div class="noresults">no matches</div>');
                 return;
@@ -183,7 +210,25 @@ MarkLogicProfile.UI = {
     },
     'http://www.w3.org/2004/02/skos/core#related': {
       color: '#FFF444'
-    }
+    },
+    'http://ieee.org/concept/hasAffiliation': {
+      color: '#588F27'
+    },
+    'http://ieee.org/concept/coContrib' : {
+        color:'#DD4492'
+    },
+    'http://purl.org/dc/elements/1.1/contributor' : {
+        color:'#04756F'
+    },
+    'http://ieee.org/concept/hasFundingAward' : {
+        color:'#B9121B'
+    },
+    'http://ieee.org/concept/hasFunder' : {
+        color:'#588F27'
+    },
+    'http://purl.org/d' : {
+        color:'#04BFBF'
+    }    
   }
 };
 
