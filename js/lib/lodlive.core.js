@@ -1496,7 +1496,7 @@
         }
         if (!toolConfig) return;
         t = jQuery('<div class="innerActionBox" title="' + LodLiveUtils.lang(toolConfig.title) + '"><span class="' + toolConfig.icon + '"></span></div>');
-        t.appendTo(tools).on('click', function() { toolConfig.handler.call(inst, obj, inst); });
+        t.appendTo(tools).on('click', function() { toolConfig.handler.call($(this), obj, inst); });
       });
       var toolWrapper = $('<div class=\"lodlive-toolbox-wrapper\"></div>').append(tools);
       container.append(toolWrapper);
