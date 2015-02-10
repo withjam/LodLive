@@ -1,8 +1,7 @@
 .rsuite-pinner { z-index: 5000; position: absolute; top: -20px; left: 25px; background-color: #FFF; border-radius: 6px; padding: 0.25em 0.5em; box-shadow: 1px 1px 2px #999;}
 .rsuite-pinner-results { min-height: 4em; max-height: 9.5em; overflow: auto;}
-.rsuite-pinner-results > div { font-size: 12px; padding: 8px 4px; }
-.rsuite-pinner-results .noresults { color: #666; font-style: italic; }
-.rsuite-pinner-result-item { cursor: pointer; padding-left: 30px; border-bottom: solid 1px #EEE }
+.rsuite-pinner-results .noresults { color: #666; font-style: italic; font-size: 12px; padding: 8px 4px; }
+.rsuite-pinner-result-item { font-size: 12px; padding: 6px 4px; cursor: pointer; padding-left: 30px; border-bottom: solid 1px #EEE }
 .rsuite-pinner-result-item:before { 
   content: '\f096';
   font-family: FontAwesome;
@@ -10,3 +9,5 @@
   display: inline-block;
 }
 .rsuite-pinner-result-item.rsuite-is-pinned:before { content: '\f14a'; }
+.rsuite-pinner-pinned { background-color: #EEE; }
+.rsuite-pinner-pinned .rsuite-pinner-result-item { border-bottom-color: #FFF; }

@@ -56,12 +56,8 @@ MarkLogicProfile.UI = {
       icon: 'fa fa-thumb-tack', 
       title: 'Pin in SPARQL',
       handler: function(node, inst) {
-        var icon = this, pinner = jQuery('.rsuite-pinner'), pos, to, uri = node.attr('rel');
+        var icon = this, pinner = inst.container.find('.rsuite-pinner'), pos, to, uri = node.attr('rel');
         // make sure pinned exists on the instance
-        if (!inst.rsuitePinned) {
-          inst.rsuitePinned = [];
-          inst.context.parent().on('scroll', function() { console.log('on scroll'); pinner.fadeOut('fast'); });
-        }
         function doTypeAhead(inp,uri) {
           var val = inp.val();
           var resdiv = pinner.find('.rsuite-pinner-results').empty().addClass('loading');
@@ -77,12 +73,18 @@ MarkLogicProfile.UI = {
             dataType: inst.getAjaxDataType(),
             success: function(resp) { 
               var b = resp.results.bindings;
+              for (var i=0; i < 20; i++) {
+                $('<div class="rsuite-pinner-result-item" data-pinned-type="'+ uri + '" data-pinned-value="'+ i +'"> item ' + i + '</div>' )
+                  .addClass(inst.rsuitePinned.indexOf(i) > -1 ? 'rsuite-is-pinned' : '')
+                  .appendTo(resdiv);
+              }
+              return;
               if (!b.length) {
                 resdiv.html('<div class="noresults">no matches</div>');
                 return;
               }
               for (var i=0; i < b.length; i++) {
-                $('<div class="rsuite-pinner-result-item" data-pinned-value="'+ b[i].subject.value +'"> ' + b[i].title.value + '"</div>' )
+                $('<div class="rsuite-pinner-result-item" data-pinned-type="' + uri +'" data-pinned-value="'+ b[i].subject.value +'"> ' + b[i].title.value + '</div>' )
                   .addClass(inst.rsuitePinned.indexOf(b[i].subject.value) > -1 ? 'rsuite-is-pinned' : '')
                   .appendTo(resdiv);
               }
@@ -91,9 +93,10 @@ MarkLogicProfile.UI = {
           });
         }
         if (!pinner.length) {
-          pinner = $('<div class="rsuite-pinner"></div>').hide().appendTo(document.body);
+          pinner = $('<div class="rsuite-pinner"></div>').hide().appendTo(inst.container);
           var pinpanel = $('<div class="rsuite-pinner-panel"></div>').appendTo(pinner);
           pinpanel.append('<div class="rsuite-pinner-search"><input type="text" class="rsuite-pinner-text"></div>');
+          pinpanel.append('<div class="rsuite-pinner-pinned"></div>');
           pinpanel.append('<div class="rsuite-pinner-results"><div class="noresults">type to search</div></div>');
           pinpanel.append('<div class="rsuite-pinner-footer"><button class="rsuite-pinner-btn">done</button></div>');
           pinpanel.find('.rsuite-pinner-text').on('keyup', function(evt) {
@@ -101,7 +104,7 @@ MarkLogicProfile.UI = {
             if (evt.which && (evt.which >= 46 || evt.which === 8)) {
               var inp = $(this);
               clearTimeout(to);
-              to = setTimeout(function() { doTypeAhead(inp,uri); },250); //timeout so val() gives the latest value
+              to = setTimeout(function() { doTypeAhead(inp, pinner.attr('pinner-uri')); },250); //timeout so val() gives the latest value
             }
           });
           pinner.on('click',function(evt) {
@@ -116,27 +119,50 @@ MarkLogicProfile.UI = {
             return false;
           });
           pinpanel.on('click', '.rsuite-pinner-result-item', function() {
-            var item = $(this), uri = item.data('pinned-value'), ind = inst.rsuitePinned.indexOf(uri);
+            var item = $(this), uri = item.data('pinned-value'), ind = inst.rsuitePinned.indexOf(uri), pinType = item.data('pinned-type');
+            console.log('uri %s, pinned index %d', uri, ind);
+            item.toggleClass('rsuite-is-pinned');
             // if it's in the array, remove it
             if (ind > -1) {
-              inst.rsuitePinned.slice(ind,1);
+              inst.rsuitePinned.splice(ind,1);
+              inst.rsuitePinTypes[pinType]--;
+              if (item.parent('.rsuite-pinner-pinned').length) {
+                item.slideUp('fast', function() { item.remove(); });
+                pinner.find('.rsuite-pinner-results .rsuite-pinner-result-item[data-pinned-value="' + uri + '"]').removeClass('rsuite-is-pinned');
+              }
             } else {
               inst.rsuitePinned.push(uri);
+              if (!inst.rsuitePinTypes.hasOwnProperty(pinType)) {
+                inst.rsuitePinTypes[pinType] = 0;
+              }
+              inst.rsuitePinTypes[pinType]++;
+              pinner.find('.rsuite-pinner-pinned').append(item.clone());
             }
-            item.toggleClass('rsuite-is-pinned');
+            console.log('pintype %s, count %d', pinType, inst.rsuitePinTypes[pinType]);
+            if (inst.rsuitePinTypes[pinType]) {
+              inst.context.find('.lodlive-node[rel="'+pinType+'"]').addClass('pinned');
+            } else {
+              inst.context.find('.lodlive-node[rel="'+pinType+'"]').removeClass('pinned');
+            }
           });
+          inst.context.parent().on('scroll', function() { console.log('on scroll'); pinner.fadeOut('fast'); });
+          if (!inst.rsuitePinned) {
+            inst.rsuitePinned = []; // an array of each pinned iri
+            inst.rsuitePinTypes = {}; // object collection of pinned types to highlight nodes
+          }
         } else {
           pinner.find('.rsuite-pinner-results').empty();
         }
         if (pinner.attr('pinner-uri') !== uri) {
           pinner.attr('pinner-uri', uri);
           pinner.fadeIn('fast');
+          pinner.find('.rsuite-pinner-pinned .rsuite-pinner-result-item').show().not('[data-pinned-type="' + uri +'"]').hide();
         } else {
           clearTimeout(to); // just for safe measure
           pinner.fadeToggle('fast');
         }
         pos = icon.offset();
-        pinner.css({ left: pos.left + 30, top: pos.top });
+        pinner.css({ left: pos.left + 20, top: pos.top - 8 });
         pinner.find('.rsuite-pinner-text').val('').focus();
       }
     }
