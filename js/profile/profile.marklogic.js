@@ -156,6 +156,8 @@ MarkLogicProfile.UI = {
               if (item.parent('.rsuite-pinner-pinned').length) {
                 item.slideUp('fast', function() { item.remove(); });
                 pinner.find('.rsuite-pinner-results .rsuite-pinner-result-item[data-pinned-value="' + uri + '"]').removeClass('rsuite-is-pinned');
+              } else { // remove it from the pinned results if it's there
+                pinner.find('.rsuite-pinner-pinned .rsuite-pinner-result-item[data-pinned-value="' + uri + '"]').slideUp('fast', function() { $(this).remove(); });
               }
             } else {
               inst.rsuitePinned.push(uri);
