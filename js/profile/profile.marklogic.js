@@ -14,7 +14,8 @@ MarkLogicProfile.connection = {
       inverse       : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
       inverseSameAs : 'SELECT DISTINCT * WHERE {{?object <http://www.w3.org/2002/07/owl#sameAs> <{URI}> } UNION { ?object <http://www.w3.org/2004/02/skos/core#exactMatch> <{URI}>}}'
     },
-    endpoint : "http://localhost:8321/lodlive.xqy",
+    // endpoint : "http://localhost:8321/lodlive.xqy",
+    endpoint : "http://lodlive-ml1:8040/lodlive.xqy",
     description : {
       en : "MarkLogic LodLive"  
     }
@@ -32,8 +33,8 @@ MarkLogicProfile.arrows = {
 };
 
 // this is the default data configuration, this is important.  It informs LodLive how to construct queries and how to read the data that comes back
-MarkLogicProfile.default2 = {
-  sparqlx : {
+MarkLogicProfile.default = {
+  sparql : {
     allClasses    : 'SELECT DISTINCT ?object WHERE {[] < ?object}',
     findSubject   : 'SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>; <http://xmlns.com/foaf/0.1/name> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1 ',
     documentUri   : 'SELECT DISTINCT * WHERE {<{URI}> ?property ?object} ORDER BY ?property',
@@ -46,40 +47,13 @@ MarkLogicProfile.default2 = {
   document : {
     className : 'standard',
     titleProperties : [
+        'http://www.w3.org/2004/02/skos/core#prefLabel',
         'http://xmlns.com/foaf/0.1/name',
         'http://purl.org/dc/elements/1.1/title'
         ]
   }, // http://www.w3.org/2000/01/rdf-schema#label
 };
-// this is the default data configuration, this is important.  It informs LodLive how to construct queries and how to read the data that comes back
-MarkLogicProfile.default = {
-  sparql : {
-    allClasses    : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?object  WHERE {   {?subject  <http://purl.org/dc/elements/1.1/type> ?object  }}',
-    findSubject   : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?subject WHERE { {?subject a <{CLASS}>;<http://purl.org/dc/elements/1.1/title> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2000/01/rdf-schema#label> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>;<http://www.w3.org/2004/02/skos/core#prefLabel> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} UNION {?subject a <{CLASS}>; <http://xmlns.com/foaf/0.1/name> ?object. FILTER(regex(str(?object),\'{VALUE}\',\'i\'))} }  LIMIT 1 ',
-    documentUri   : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?property ?object  WHERE { {?subject (dc:type) ?base . ?subject (dc:type) ?type ;  ?property ?dest } {?dest (dc:type) ?object}} ORDER BY ?property',
-    document      : 'PREFIX dc: <http://purl.org/dc/elements/1.1/>  SELECT DISTINCT  ?property ?object  WHERE { ?spo dc:type  <{URI}> . ?spo ?property  ?object FILTER (?property = dc:title)} LIMIT 100',
-    bnode         : 'PREFIX dc: <http://purl.org/dc/elements/1.1/> SELECT DISTINCT ?subject ?property ?object  WHERE { {<{URI}> (dc:type) ?base . ?subject (dc:type) ?type ;  ?property ?object } {?object (dc:type) ?dest}} ORDER BY ?property',
-    inverse       : 'SELECT DISTINCT * WHERE {?object ?property <{URI}>.} LIMIT 100',
-    inverseSameAs : 'SELECT DISTINCT * WHERE {{?object <http://www.w3.org/2002/07/owl#sameAs> <{URI}> } UNION { ?object <http://www.w3.org/2004/02/skos/core#exactMatch> <{URI}>}}'
-  },
-  endpoint : 'http://labs.regesta.com/resourceProxy/',
-  document : {
-    className : 'standard',
-    titleProperties : [
-        'http://xmlns.com/foaf/0.1/name',
-        'http://purl.org/dc/elements/1.1/title',
-        'http://purl.org/dc/elements/1.1/type'
-        ],
-    titleName : {
-      "http://ieee.org/concept/document" : "Document",
-      "http://ieee.org/concept/topic" : "Topic",
-      "http://ieee.org/concept/organization" : "Organization",
-      "http://ieee.org/concept/person" : "Person",
-      "http://ieee.org/concept/fundingAward" : "FundingAward",
-      "http://ieee.org/concept/funder" : "Funder"
-    }
-  }, // http://www.w3.org/2000/01/rdf-schema#label
-};
+
 MarkLogicProfile.UI = {
   ignoreBnodes: true,
   nodeIcons: [
